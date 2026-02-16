@@ -234,4 +234,3 @@ Related Algorithms
 
 - :doc:`bayesian` - GP-based, better uncertainty
 - :doc:`tpe` - Density-based, similar use cases
-- :doc:`ensemble` - Combines multiple models

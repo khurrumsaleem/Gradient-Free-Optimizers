@@ -83,9 +83,6 @@ Algorithm Overview
     * - :doc:`Forest Optimizer <smbo/forest>`
       - SMBO
       - Large search spaces with discrete parameters
-    * - :doc:`Ensemble Optimizer <smbo/ensemble>`
-      - SMBO
-      - Robust surrogate modeling
 
 
 Categories
@@ -135,7 +132,7 @@ Categories
         Build a surrogate model of the objective function to predict promising
         regions. Ideal for expensive evaluations.
 
-        **Algorithms:** Bayesian Optimization, TPE, Forest Optimizer, Ensemble
+        **Algorithms:** Bayesian Optimization, TPE, Forest Optimizer
 
 
 How to Choose

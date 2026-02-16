@@ -222,4 +222,3 @@ Related Algorithms
 
 - :doc:`bayesian` - GP-based, better for continuous
 - :doc:`forest` - Tree-based surrogate
-- :doc:`ensemble` - Combines multiple models

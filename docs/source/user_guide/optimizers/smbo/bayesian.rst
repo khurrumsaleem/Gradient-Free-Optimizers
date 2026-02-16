@@ -247,4 +247,3 @@ Related Algorithms
 
 - :doc:`tpe` - Density-based, handles categoricals well
 - :doc:`forest` - Tree-based, scales better
-- :doc:`ensemble` - Combines multiple models

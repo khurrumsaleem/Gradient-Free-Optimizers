@@ -9,8 +9,11 @@ algorithm selection, and advanced features for efficient black-box optimization.
 
 .. tip::
 
-   New to GFO? Start with :ref:`search_spaces` to understand how to define
-   parameter spaces, then explore :ref:`optimizers` to choose your algorithm.
+   New to GFO? Follow this path through the guide:
+
+   1. :doc:`user_guide/search_spaces` -- learn how to define parameter ranges
+   2. :doc:`user_guide/objective_functions` -- write functions to optimize
+   3. :doc:`user_guide/optimizer_selection` -- choose the right algorithm for your problem
 
 ----
 
@@ -191,10 +194,9 @@ GFO provides 22 optimization algorithms organized into four categories:
       :link-type: doc
       :class-card: sd-border-start sd-border-warning
 
-      **4 algorithms** that learn from evaluations
+      **3 algorithms** that learn from evaluations
 
-      Bayesian Optimization, TPE, Forest Optimizer,
-      and Ensemble methods.
+      Bayesian Optimization, TPE, and Forest Optimizer.
 
 ----
 

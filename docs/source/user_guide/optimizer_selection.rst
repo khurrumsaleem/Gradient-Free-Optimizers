@@ -40,7 +40,7 @@ where to search next.
    .. grid-item-card:: Sequential Model-Based
       :class-card: gfo-compact gfo-smbo
 
-      Bayesian, TPE, Forest, Ensemble.
+      Bayesian, TPE, Forest.
       Best for expensive objective functions.
 
 

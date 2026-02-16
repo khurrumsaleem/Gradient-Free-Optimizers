@@ -22,8 +22,6 @@ Overview
       - Tree-structured Parzen Estimators using density estimation.
     * - :doc:`forest`
       - Random Forest or Extra Trees as surrogate model.
-    * - :doc:`ensemble`
-      - Combines multiple surrogate models for robustness.
 
 
 How SMBO Works
@@ -129,10 +127,6 @@ Algorithm Comparison
       - Random Forest
       - Variance across trees
       - Large discrete spaces
-    * - Ensemble
-      - Multiple models
-      - Combined
-      - Robust predictions
 
 
 Surrogate Model Comparison
@@ -142,9 +136,9 @@ Surrogate Model Comparison
     :alt: SMBO surrogate model comparison
     :align: center
 
-    The four SMBO approaches use different surrogate models: GP with
-    uncertainty bands, TPE with good/bad density separation, Forest with
-    tree ensemble variance, and Ensemble combining multiple model types.
+    The three SMBO approaches use different surrogate models: GP with
+    uncertainty bands, TPE with good/bad density separation, and Forest with
+    tree ensemble variance.
 
 
 Visualization
@@ -226,4 +220,3 @@ Algorithms
     bayesian
     tpe
     forest
-    ensemble
