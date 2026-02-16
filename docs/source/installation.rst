@@ -20,8 +20,8 @@ Install GFO from PyPI using pip:
 
     pip install gradient-free-optimizers
 
-This installs GFO with its minimal dependencies (only NumPy), which is sufficient
-for all core optimization algorithms.
+This installs GFO with its core dependencies (NumPy, SciPy, and pandas), which is
+sufficient for all core optimization algorithms.
 
 
 Installation with Extras
@@ -46,7 +46,7 @@ For additional functionality, you can install optional extras:
             pip install gradient-free-optimizers[sklearn]
 
         Adds ``scikit-learn`` for surrogate models used in Bayesian Optimization,
-        TPE, Forest Optimizer, and Ensemble Optimizer.
+        TPE, and Forest Optimizer.
 
     .. tab-item:: Full Installation
 
@@ -94,9 +94,11 @@ Gradient-Free-Optimizers requires the following packages (automatically installe
 
    * - Package
      - Purpose
-   * - ``numpy >= 1.18``
+   * - ``numpy >= 1.18.1, < 3.0.0``
      - Numerical operations, array handling, and search space definition
-   * - ``pandas >= 1.0``
+   * - ``scipy < 2.0.0``
+     - Scientific computing and statistical functions
+   * - ``pandas < 3.0.0``
      - Search data storage and manipulation
 
 Optional Dependencies
@@ -111,7 +113,7 @@ Optional Dependencies
    * - ``tqdm >= 4.48`` (extra: ``progress``)
      - Progress bars during optimization
    * - ``scikit-learn >= 0.23`` (extra: ``sklearn``)
-     - Surrogate models for SMBO algorithms (Bayesian, TPE, Forest, Ensemble)
+     - Surrogate models for SMBO algorithms (Bayesian, TPE, Forest)
 
 
 ----

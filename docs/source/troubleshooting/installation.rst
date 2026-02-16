@@ -57,7 +57,7 @@ Import Errors
 
 .. code-block:: bash
 
-    # For SMBO algorithms (Bayesian, TPE, Forest, Ensemble)
+    # For SMBO algorithms (Bayesian, TPE, Forest)
     pip install gradient-free-optimizers[sklearn]
 
     # For progress bars
