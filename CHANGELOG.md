@@ -9,6 +9,11 @@ For detailed release notes, see [GitHub Releases](https://github.com/SimonBlanke
 
 ## [Unreleased]
 
+## [1.10.1] - 2026-02-19
+
+### Fixed
+- `optimum="minimum"` parameter in `search()` had no effect on the actual optimization. The objective adapter received the raw function instead of the negated one, causing the optimizer to maximize regardless of the `optimum` setting. The negation was only applied to the progress bar display.
+
 ## [1.10.0] - 2026-02-14
 
 Major release introducing a new optimizer architecture based on the Template Method Pattern, extended search space support with continuous, categorical, and discrete dimension types, and vectorized operations for high-dimensional optimization.
