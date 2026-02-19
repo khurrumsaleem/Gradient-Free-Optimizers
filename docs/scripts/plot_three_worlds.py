@@ -51,14 +51,28 @@ fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
 # ---------------------------------------------------------------------------
 # Title
 # ---------------------------------------------------------------------------
+ax.text(
+    0.5,
+    0.97,
+    "Support Vector Machine\nHyperparameter Search Space",
+    fontsize=14,
+    fontweight="bold",
+    fontfamily=SANS_FONT,
+    color=WHITE,
+    ha="center",
+    va="center",
+    linespacing=1.4,
+    transform=ax.transAxes,
+    zorder=3,
+)
 
 # ---------------------------------------------------------------------------
 # Code block background
 # ---------------------------------------------------------------------------
 CODE_LEFT = 0.15
 CODE_RIGHT = 0.85
-CODE_TOP = 0.96
-CODE_BOTTOM = 0.65
+CODE_TOP = 0.92
+CODE_BOTTOM = 0.61
 
 code_bg = mpatches.FancyBboxPatch(
     (CODE_LEFT, CODE_BOTTOM),
@@ -84,8 +98,8 @@ CODE_LINE_H = 0.052
 
 # The code snippet, matching the exact original formatting:
 #   search_space = {
-#       "x":      np.arange(-1, 7, 1),
-#       "y":      (-5.0, 5.0),
+#       "degree": np.arange(1, 6, 1),
+#       "C":      (0.01, 100.0),
 #       "kernel": ["linear", "rbf", "poly"],
 #   }
 
@@ -95,33 +109,33 @@ code_lines = [
         ("search_space", RED),
         (" = {", LIGHT),
     ],
-    # line 1: "x":      np.arange(-1, 7, 1),
+    # line 1: "degree": np.arange(1, 6, 1),
     [
         ("    ", None),
-        ('"x"', GREEN),
+        ('"degree"', GREEN),
         (":", LIGHT),
-        ("      ", None),
+        (" ", None),
         ("np", CYAN),
         (".", LIGHT),
         ("arange", BLUE),
         ("(", LIGHT),
-        ("-1", ORANGE),
+        ("1", ORANGE),
         (", ", LIGHT),
-        ("7", ORANGE),
+        ("6", ORANGE),
         (", ", LIGHT),
         ("1", ORANGE),
         ("),", LIGHT),
     ],
-    # line 2: "y":      (-5.0, 5.0),
+    # line 2: "C":      (0.01, 100.0),
     [
         ("    ", None),
-        ('"y"', GREEN),
+        ('"C"', GREEN),
         (":", LIGHT),
         ("      ", None),
         ("(", LIGHT),
-        ("-5.0", ORANGE),
+        ("0.01", ORANGE),
         (", ", LIGHT),
-        ("5.0", ORANGE),
+        ("100.0", ORANGE),
         ("),", LIGHT),
     ],
     # line 3: "kernel": ["linear", "rbf", "poly"],
@@ -308,8 +322,8 @@ ax.plot(
     zorder=3,
 )
 
-# Dot positions: -1 to 6 (8 values from np.arange(-1, 7, 1))
-values = list(range(-1, 7))
+# Dot positions: 1 to 5 (5 values from np.arange(1, 6, 1))
+values = list(range(1, 6))
 n_vals = len(values)
 for j, v in enumerate(values):
     frac = j / (n_vals - 1)
@@ -340,26 +354,25 @@ for j, v in enumerate(values):
         zorder=4,
     )
 
-    # Label endpoints and a few middle values for legibility
-    if v in (-1, 1, 3, 6):
-        ax.text(
-            x_pos,
-            nl_y - 0.04,
-            str(v),
-            fontsize=8,
-            fontfamily=MONO_FONT,
-            color=GRAY,
-            ha="center",
-            va="center",
-            transform=ax.transAxes,
-            zorder=4,
-        )
+    # Label every dot
+    ax.text(
+        x_pos,
+        nl_y - 0.04,
+        str(v),
+        fontsize=8,
+        fontfamily=MONO_FONT,
+        color=GRAY,
+        ha="center",
+        va="center",
+        transform=ax.transAxes,
+        zorder=4,
+    )
 
 # Caption below
 ax.text(
     disc_center_x,
     disc_cy + 0.055,
-    "Fixed integer steps",
+    "Fixed steps",
     fontsize=9,
     fontfamily=SANS_FONT,
     color=GRAY,
@@ -418,7 +431,7 @@ ax.add_patch(grad_border)
 ax.text(
     bar_left + 0.005,
     bar_bottom - 0.03,
-    "-5.0",
+    "0.01",
     fontsize=9,
     fontfamily=MONO_FONT,
     color=GRAY,
@@ -430,7 +443,7 @@ ax.text(
 ax.text(
     bar_right - 0.005,
     bar_bottom - 0.03,
-    "5.0",
+    "100.0",
     fontsize=9,
     fontfamily=MONO_FONT,
     color=GRAY,
