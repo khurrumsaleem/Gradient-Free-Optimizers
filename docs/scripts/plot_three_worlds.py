@@ -262,15 +262,15 @@ for i, (cx, cy, cw, ch) in enumerate(columns):
 ARROW_BOTTOM_Y = VIS_TOP + 0.015
 arrow_targets_x = [cx + cw / 2 for (cx, cy, cw, ch) in columns]
 
-# Each arrow originates from the horizontal center of the value part
-# of its code line, at the bottom edge of the code block.
+# Each arrow originates from the end of its value expression at the
+# y-height of its code line, creating a clear visual link.
 line_to_col = {1: 0, 2: 1, 3: 2}  # code line index -> column index
-arc_rads = [-0.15, 0.0, 0.15]  # slight curvature for left/center/right
+arc_rads = [-0.3, 0.0, 0.15]  # curvature tuned per arrow path
 
 for line_idx, col_idx in line_to_col.items():
     ext = value_extents[line_idx]
-    src_x = (ext["x_start"] + ext["x_end"]) / 2
-    src_y = CODE_BOTTOM - 0.005
+    src_x = ext["x_end"] + 0.008
+    src_y = ext["y"]
 
     ax.annotate(
         "",
