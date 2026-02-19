@@ -231,10 +231,10 @@ class Search(TimesTracker, SearchStatistics):
             )
 
         if self.memory not in [False, None]:
-            self.adapter = CachedObjectiveAdapter(self.conv, objective_function)
+            self.adapter = CachedObjectiveAdapter(self.conv, self.objective_function)
             self.adapter.memory(memory_warm_start, memory)
         else:
-            self.adapter = ObjectiveAdapter(self.conv, objective_function)
+            self.adapter = ObjectiveAdapter(self.conv, self.objective_function)
 
         self.n_inits_norm = min((self.init.n_inits - self.n_init_total), self.n_iter)
 
