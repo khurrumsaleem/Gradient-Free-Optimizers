@@ -71,8 +71,8 @@ ax.text(
 # ---------------------------------------------------------------------------
 CODE_LEFT = 0.15
 CODE_RIGHT = 0.85
-CODE_TOP = 0.92
-CODE_BOTTOM = 0.61
+CODE_TOP = 0.88
+CODE_BOTTOM = 0.57
 
 code_bg = mpatches.FancyBboxPatch(
     (CODE_LEFT, CODE_BOTTOM),
@@ -210,12 +210,12 @@ for line_idx, tokens in enumerate(code_lines):
 # ---------------------------------------------------------------------------
 # Visual zone: three sub-areas side by side below the code block
 # ---------------------------------------------------------------------------
-VIS_TOP = 0.52
-VIS_BOTTOM = 0.04
+VIS_TOP = 0.48
+VIS_BOTTOM = 0.06
 VIS_HEIGHT = VIS_TOP - VIS_BOTTOM
 
-COL_WIDTH = 0.26
-COL_GAP = 0.03
+COL_WIDTH = 0.30
+COL_GAP = 0.02
 total_w = 3 * COL_WIDTH + 2 * COL_GAP
 COL_X0 = (1.0 - total_w) / 2
 
@@ -568,6 +568,6 @@ out_path = (
     "/home/me/github-workspace/002-gfo-stack/"
     "Gradient-Free-Optimizers/mixed_search_spaces_diagram.png"
 )
-fig.savefig(out_path, dpi=500, facecolor=BG_COLOR, bbox_inches="tight", pad_inches=0.15)
+fig.savefig(out_path, dpi=500, facecolor=BG_COLOR, bbox_inches="tight", pad_inches=0.05)
 plt.close(fig)
 print(f"Saved: {out_path}")
