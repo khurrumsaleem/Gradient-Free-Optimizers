@@ -58,8 +58,15 @@
     <a href="https://app.codecov.io/gh/SimonBlanke/Gradient-Free-Optimizers"><img src="https://img.shields.io/codecov/c/github/SimonBlanke/Gradient-Free-Optimizers?style=for-the-badge&logo=codecov&logoColor=white" alt="Coverage"></a>
     </p>
 
+    <hr style="border-radius: 0; border-top: 3px solid var(--pst-color-border); margin: 2.5rem 0 0.5rem 0;">
 
-----
+    <p style="text-align: center; max-width: 700px; margin: 1.5rem auto; line-height: 1.6;">
+    Gradient-Free-Optimizers provides a unified interface to gradient-free optimization
+    algorithms for discrete, continuous, and mixed search spaces. It covers local, global,
+    population-based, and sequential model-based techniques with minimal dependencies.
+    </p>
+
+    <div style="margin-bottom: 7rem;"></div>
 
 
 Why Gradient-Free?
@@ -215,6 +222,14 @@ Key Features
 
 Quick Install
 -------------
+
+.. raw:: html
+
+    <p align="center">
+    <a href="https://pypi.org/project/gradient-free-optimizers/" target="_blank"><img src="https://img.shields.io/pypi/v/gradient-free-optimizers?style=flat-square" alt="PyPI Version"></a>
+    <a href="https://pypi.org/project/gradient-free-optimizers/" target="_blank"><img src="https://img.shields.io/pypi/pyversions/gradient-free-optimizers?style=flat-square" alt="Python Versions"></a>
+    <a href="https://github.com/SimonBlanke/Gradient-Free-Optimizers/blob/main/LICENSE" target="_blank"><img src="https://img.shields.io/github/license/SimonBlanke/Gradient-Free-Optimizers?style=flat-square" alt="License"></a>
+    </p>
 
 .. code-block:: bash
 

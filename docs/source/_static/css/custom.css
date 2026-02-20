@@ -253,11 +253,14 @@ hr {
 
 .hero-tagline {
     font-size: 1.25rem;
-    opacity: 0.9;
+    font-weight: 400;
+    color: rgba(210, 215, 225, 0.95);
     max-width: 600px;
     margin: 0 auto;
     position: relative;
     z-index: 1;
+    letter-spacing: 0.05em;
+    font-style: italic;
 }
 
 /* -- Stats Strip ----------------------------------------------------------- */
