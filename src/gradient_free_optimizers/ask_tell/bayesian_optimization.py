@@ -36,7 +36,13 @@ class BayesianOptimizer(_BayesianOptimizer, AskTell):
     gpr : object or None, default=None
         Gaussian Process Regressor for the surrogate model.
     xi : float, default=0.03
-        Exploration-exploitation trade-off for Expected Improvement.
+        Exploration-exploitation trade-off for Expected Improvement and
+        Probability of Improvement.
+    acquisition_function : str, default="expected_improvement"
+        Acquisition function used to score candidates. Supports
+        "expected_improvement", "probability_of_improvement", and
+        "thompson_sampling"; aliases "ei", "pi", and "thompson" are also
+        accepted.
     """
 
     def __init__(
@@ -53,6 +59,7 @@ class BayesianOptimizer(_BayesianOptimizer, AskTell):
         replacement: bool = True,
         gpr: object | None = None,
         xi: float = 0.03,
+        acquisition_function: str = "expected_improvement",
     ):
         if constraints is None:
             constraints = []
@@ -72,6 +79,7 @@ class BayesianOptimizer(_BayesianOptimizer, AskTell):
             replacement=replacement,
             gpr=gpr,
             xi=xi,
+            acquisition_function=acquisition_function,
         )
 
         self._process_initial_evaluations(initial_evaluations)

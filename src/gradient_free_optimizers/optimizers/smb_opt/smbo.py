@@ -121,6 +121,7 @@ class SMBO(BaseOptimizer):
             boundary=boundary,
         )
 
+        self._rng_acquisition = random.default_rng(self.random_seed + 1_928_713)
         self.warm_start_smbo = warm_start_smbo
         self.max_sample_size = max_sample_size
         self.sampling = sampling if sampling is not None else {"random": 1000000}

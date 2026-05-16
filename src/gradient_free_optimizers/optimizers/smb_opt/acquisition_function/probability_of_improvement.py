@@ -2,17 +2,17 @@
 # Email: simon.blanke@yahoo.com
 # License: MIT License
 
-"""Expected Improvement acquisition function."""
+"""Probability of Improvement acquisition function."""
 
 from gradient_free_optimizers._array_backend import array, zeros_like
-from gradient_free_optimizers._math_backend import norm_cdf, norm_pdf
+from gradient_free_optimizers._math_backend import norm_cdf
 
 from .._normalize import normalize
 from ._utils import predict_mean_std
 
 
-class ExpectedImprovement:
-    """Expected Improvement acquisition function for selecting next query point."""
+class ProbabilityOfImprovement:
+    """Probability of Improvement acquisition function."""
 
     def __init__(self, surrogate_model, position_l, xi):
         self.surrogate_model = surrogate_model
@@ -20,28 +20,21 @@ class ExpectedImprovement:
         self.xi = xi
 
     def calculate(self, X_sample, Y_sample):
-        """Compute expected improvement values for all candidate positions."""
+        """Compute improvement probabilities for all candidate positions."""
         mu, sigma = predict_mean_std(self.surrogate_model, self.position_l)
-
-        # with normalization this is always 1
         Y_sample = normalize(array(Y_sample)).reshape(-1, 1)
 
         imp = mu - Y_sample.max() - self.xi
 
-        # Safe division: divide where sigma != 0, else 0
         Z = zeros_like(sigma)
         for i in range(len(sigma)):
             if sigma[i, 0] != 0:
                 Z[i, 0] = imp[i, 0] / sigma[i, 0]
 
-        exploit = imp * norm_cdf(Z)
-        explore = sigma * norm_pdf(Z)
+        acqu_func = norm_cdf(Z)
 
-        aqu_func = exploit + explore
-
-        # Set acquisition to 0 where sigma == 0
         for i in range(len(sigma)):
             if sigma[i, 0] == 0.0:
-                aqu_func[i, 0] = 0.0
+                acqu_func[i, 0] = 0.0
 
-        return aqu_func[:, 0]
+        return acqu_func[:, 0]

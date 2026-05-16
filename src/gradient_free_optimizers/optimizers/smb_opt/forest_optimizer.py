@@ -16,7 +16,10 @@ from gradient_free_optimizers._array_backend import (
     random,
 )
 
-from .acquisition_function import ExpectedImprovement
+from .acquisition_function import (
+    create_acquisition_function,
+    normalize_acquisition_function_name,
+)
 from .smbo import SMBO
 from .surrogate_models import (
     ExtraTreesRegressor,
@@ -93,7 +96,13 @@ class ForestOptimizer(SMBO):
     tree_para : dict, default={"n_estimators": 100}
         Parameters passed to the tree regressor.
     xi : float, default=0.03
-        Exploration-exploitation parameter for Expected Improvement.
+        Exploration-exploitation parameter for Expected Improvement and
+        Probability of Improvement.
+    acquisition_function : str, default="expected_improvement"
+        Acquisition function used to score candidate positions. Supports
+        "expected_improvement", "probability_of_improvement", and
+        "thompson_sampling". Short aliases "ei", "pi", and "thompson" are
+        also accepted.
     """
 
     name = "Forest Optimization"
@@ -121,6 +130,7 @@ class ForestOptimizer(SMBO):
         ] = "extra_tree",
         tree_para: dict[str, Any] | None = None,
         xi: float = 0.03,
+        acquisition_function: str = "expected_improvement",
     ) -> None:
         if tree_para is None:
             tree_para = {"n_estimators": 100}
@@ -143,9 +153,12 @@ class ForestOptimizer(SMBO):
         self.tree_para = tree_para
         self.regr = tree_regressor_dict[tree_regressor](**self.tree_para)
         self.xi = xi
+        self.acquisition_function = normalize_acquisition_function_name(
+            acquisition_function
+        )
 
     def _expected_improvement(self) -> ndarray:
-        """Compute Expected Improvement for all candidate positions.
+        """Compute acquisition values for all candidate positions.
 
         Uses the tree ensemble's prediction variance to estimate uncertainty.
 
@@ -156,7 +169,13 @@ class ForestOptimizer(SMBO):
         """
         self.pos_comb = self._sampling(self.all_pos_comb)
 
-        acqu_func = ExpectedImprovement(self.regr, self.pos_comb, self.xi)
+        acqu_func = create_acquisition_function(
+            self.acquisition_function,
+            self.regr,
+            self.pos_comb,
+            self.xi,
+            rng=self._rng_acquisition,
+        )
         return acqu_func.calculate(self.X_sample, self.Y_sample)
 
     def _training(self) -> None:

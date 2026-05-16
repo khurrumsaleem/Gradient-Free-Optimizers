@@ -200,8 +200,9 @@ class ForestOptimizer(_ForestOptimizer, Search):
             tree_para = {"n_estimators": 200, "max_depth": 10}
     xi : float, default=0.03
         Exploration-exploitation trade-off parameter for the acquisition
-        function. Controls how much the optimizer values uncertain
-        regions (high variance across trees) over predicted-good regions.
+        functions Expected Improvement and Probability of Improvement.
+        Controls how much the optimizer values uncertain regions (high
+        variance across trees) over predicted-good regions.
 
         - ``0.0``: Pure exploitation, samples where the ensemble predicts
           the best score.
@@ -211,6 +212,16 @@ class ForestOptimizer(_ForestOptimizer, Search):
         Same role as ``xi`` in BayesianOptimizer, but uncertainty is
         estimated from the variance across tree predictions rather than
         from a Gaussian Process.
+    acquisition_function : str, default="expected_improvement"
+        Acquisition function used to score candidate points.
+
+        - ``"expected_improvement"`` or ``"ei"``: Balance probability
+          and magnitude of improvement.
+        - ``"probability_of_improvement"`` or ``"pi"``: Maximize the
+          probability of beating the current best score.
+        - ``"thompson_sampling"`` or ``"thompson"``: Draw one posterior
+          sample per candidate and select by sampled score. ``xi`` is not
+          used by this acquisition function.
 
     Notes
     -----
@@ -283,6 +294,7 @@ class ForestOptimizer(_ForestOptimizer, Search):
         ] = "extra_tree",
         tree_para: dict[str, int] = {"n_estimators": 100},
         xi: float = 0.03,
+        acquisition_function: str = "expected_improvement",
     ):
         if initialize is None:
             initialize = get_default_initialize()
@@ -306,4 +318,5 @@ class ForestOptimizer(_ForestOptimizer, Search):
             tree_regressor=tree_regressor,
             tree_para=tree_para,
             xi=xi,
+            acquisition_function=acquisition_function,
         )

@@ -5,11 +5,11 @@ Bayesian Optimization
 Bayesian Optimization fits a Gaussian Process (GP) surrogate model to all
 observed (position, score) pairs, producing both a mean prediction and a
 calibrated uncertainty estimate at every point in the search space. An
-acquisition function, Expected Improvement (EI), combines these two quantities
-to score candidate positions: points with high predicted value or high
-uncertainty receive high acquisition scores. The optimizer selects the
-candidate with the highest acquisition score, evaluates the true objective
-there, and retrains the GP on the expanded dataset.
+acquisition function combines these two quantities to score candidate
+positions. By default this is Expected Improvement (EI), but Probability of
+Improvement (PI) and Thompson Sampling are also available. The optimizer
+selects the candidate with the highest acquisition score, evaluates the true
+objective there, and retrains the GP on the expanded dataset.
 
 
 .. grid:: 2
@@ -48,13 +48,16 @@ At each iteration:
 
 1. **Fit surrogate model**: Train GP on all (position, score) observations
 2. **Predict**: For candidate positions, predict mean and uncertainty
-3. **Acquisition function**: Compute Expected Improvement (EI)
+3. **Acquisition function**: Score candidates with the configured acquisition
+   function
 
    .. code-block:: text
 
        EI(x) = E[max(0, f(x) - f(x_best))]
 
-   EI is high when: predicted value is good OR uncertainty is high
+   EI is high when the predicted value is good or uncertainty is high. PI
+   scores the probability of any improvement, while Thompson Sampling draws
+   one posterior sample per candidate.
 
 4. **Select**: Choose position with highest acquisition value
 5. **Evaluate**: Run actual objective function
@@ -64,17 +67,16 @@ At each iteration:
 
     Bayesian Optimization is fundamentally about making
     decisions under uncertainty. The GP surrogate provides not just a prediction
-    but a full probability distribution at every point. The Expected Improvement
-    acquisition function then naturally balances exploration (high uncertainty)
-    and exploitation (high predicted value) in a single, principled formula.
-    This is why BO can find good solutions in remarkably few evaluations
-    compared to methods that lack an uncertainty model.
+    but a full probability distribution at every point. The acquisition
+    function turns that posterior into a decision rule. EI balances the chance
+    and size of improvement, PI emphasizes the chance of improvement, and
+    Thompson Sampling explores through stochastic posterior samples.
 
 .. figure:: /_static/diagrams/bayesian_optimization_flowchart.svg
     :alt: Bayesian Optimization algorithm flowchart
     :align: center
 
-    The BO loop: fit GP, compute Expected Improvement, select the point
+    The BO loop: fit GP, compute an acquisition score, select the point
     with highest acquisition value, evaluate, and update the dataset.
 
 
@@ -104,17 +106,66 @@ Parameters
     * - ``xi``
       - float
       - 0.03
-      - Exploration-exploitation trade-off
+      - Exploration-exploitation trade-off for EI and PI
+    * - ``acquisition_function``
+      - str
+      - "expected_improvement"
+      - Acquisition function: "expected_improvement", "probability_of_improvement",
+        or "thompson_sampling"
     * - ``gpr``
       - object
       - gaussian_process["gp_nonlinear"]
       - Gaussian Process regressor configuration
 
 
+Acquisition Functions
+^^^^^^^^^^^^^^^^^^^^^
+
+``acquisition_function`` controls how the GP posterior is converted into a
+score for each candidate position. The default, ``"expected_improvement"``,
+usually provides a good first choice because it considers both how likely an
+improvement is and how large that improvement could be.
+
+.. list-table::
+    :header-rows: 1
+    :widths: 30 70
+
+    * - Value
+      - Behavior
+    * - ``"expected_improvement"`` or ``"ei"``
+      - Balances improvement probability and improvement magnitude.
+    * - ``"probability_of_improvement"`` or ``"pi"``
+      - Maximizes the probability of beating the current best score. This is
+        more exploitative and can be useful for local fine-tuning.
+    * - ``"thompson_sampling"`` or ``"thompson"``
+      - Draws one posterior sample for each candidate and selects by sampled
+        score. Exploration comes from posterior uncertainty rather than ``xi``.
+
+.. code-block:: python
+
+    # Default behavior
+    opt = BayesianOptimizer(search_space, acquisition_function="ei")
+
+    # More exploitative fine-tuning
+    opt = BayesianOptimizer(
+        search_space,
+        acquisition_function="pi",
+        xi=0.01,
+    )
+
+    # Stochastic posterior sampling
+    opt = BayesianOptimizer(
+        search_space,
+        acquisition_function="thompson_sampling",
+        random_state=42,
+    )
+
+
 The xi Parameter
 ^^^^^^^^^^^^^^^^
 
-``xi`` controls the exploration-exploitation balance:
+``xi`` controls the exploration-exploitation balance for Expected Improvement
+and Probability of Improvement. It is not used by Thompson Sampling.
 
 - **Lower xi (0.01)**: Focus on regions with high predicted scores
 - **Higher xi (0.1)**: Explore uncertain regions more
@@ -124,7 +175,7 @@ The xi Parameter
     # Exploitation-focused
     opt = BayesianOptimizer(search_space, xi=0.01)
 
-    # Exploration-focused
+    # Exploration-focused EI or PI
     opt = BayesianOptimizer(search_space, xi=0.1)
 
 
@@ -231,15 +282,16 @@ Higher-Dimensional Example
 Trade-offs
 ----------
 
-- **Exploration vs. exploitation**: Controlled by ``xi``. The GP's uncertainty
-  naturally decays in well-sampled regions, so exploration shifts automatically
-  toward unexplored areas.
+- **Exploration vs. exploitation**: Controlled by the acquisition function and,
+  for EI and PI, by ``xi``. The GP's uncertainty naturally decays in
+  well-sampled regions, so exploration shifts automatically toward unexplored
+  areas.
 - **Computational overhead**: GP training is O(n^3) in observations. This makes
   BO best suited for problems where the objective function is far more expensive
   than the surrogate model fitting.
-- **Parameter sensitivity**: The default ``xi=0.03`` works well for most problems.
-  The choice of GP kernel (via ``gpr``) can matter more than ``xi`` for complex
-  landscapes.
+- **Parameter sensitivity**: The default ``acquisition_function`` and
+  ``xi=0.03`` work well for most problems. The choice of GP kernel (via
+  ``gpr``) can matter more than the acquisition setting for complex landscapes.
 
 
 Related Algorithms

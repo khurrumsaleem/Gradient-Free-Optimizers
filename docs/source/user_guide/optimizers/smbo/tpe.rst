@@ -92,10 +92,6 @@ Parameters
       - float
       - 0.2
       - Fraction of observations considered "good"
-    * - ``xi``
-      - float
-      - 0.03
-      - Exploration-exploitation trade-off
 
 
 The gamma_tpe Parameter
@@ -213,8 +209,7 @@ Trade-offs
 - **Computational overhead**: O(n) per iteration for density estimation, much
   lighter than GP's O(n^3). This makes TPE practical for hundreds of evaluations.
 - **Parameter sensitivity**: ``gamma_tpe=0.2`` is a well-tested default. The
-  algorithm is relatively robust to this choice. ``xi`` provides additional
-  fine-tuning of exploration pressure.
+  algorithm is relatively robust to this choice.
 
 
 Related Algorithms

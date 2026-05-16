@@ -38,7 +38,13 @@ class ForestOptimizer(_ForestOptimizer, AskTell):
     tree_para : dict, default={"n_estimators": 100}
         Parameters passed to the underlying scikit-learn tree regressor.
     xi : float, default=0.03
-        Exploration-exploitation trade-off for the acquisition function.
+        Exploration-exploitation trade-off for Expected Improvement and
+        Probability of Improvement.
+    acquisition_function : str, default="expected_improvement"
+        Acquisition function used to score candidates. Supports
+        "expected_improvement", "probability_of_improvement", and
+        "thompson_sampling"; aliases "ei", "pi", and "thompson" are also
+        accepted.
     """
 
     def __init__(
@@ -58,6 +64,7 @@ class ForestOptimizer(_ForestOptimizer, AskTell):
         ] = "extra_tree",
         tree_para: dict[str, int] = {"n_estimators": 100},
         xi: float = 0.03,
+        acquisition_function: str = "expected_improvement",
     ):
         if constraints is None:
             constraints = []
@@ -78,6 +85,7 @@ class ForestOptimizer(_ForestOptimizer, AskTell):
             tree_regressor=tree_regressor,
             tree_para=tree_para,
             xi=xi,
+            acquisition_function=acquisition_function,
         )
 
         self._process_initial_evaluations(initial_evaluations)

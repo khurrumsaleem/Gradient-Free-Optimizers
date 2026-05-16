@@ -64,28 +64,68 @@ When to Use SMBO
 - Purely discrete/categorical spaces (use TPE or Forest)
 
 
-Common Parameters
------------------
+Acquisition Functions and Parameters
+------------------------------------
 
-All SMBO algorithms share:
+Bayesian Optimization and Forest Optimizer use a surrogate model that predicts
+a mean score and uncertainty for each candidate. The ``acquisition_function``
+parameter controls how those two quantities are converted into a score to
+maximize. TPE uses a density ratio instead and does not accept
+``acquisition_function``.
 
 .. list-table::
     :header-rows: 1
-    :widths: 20 15 65
+    :widths: 25 15 60
 
     * - Parameter
       - Default
       - Description
+    * - ``acquisition_function``
+      - "expected_improvement"
+      - Acquisition function for Bayesian and Forest optimizers.
     * - ``xi``
       - 0.03
-      - Exploration-exploitation trade-off in acquisition function
+      - Exploration-exploitation trade-off for EI and PI.
+
+
+Available Acquisition Functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+    :header-rows: 1
+    :widths: 30 70
+
+    * - Value
+      - Behavior
+    * - ``"expected_improvement"`` or ``"ei"``
+      - Default. Balances the probability of improvement and the expected size
+        of that improvement.
+    * - ``"probability_of_improvement"`` or ``"pi"``
+      - Focuses on the probability of beating the current best score. This is
+        usually more exploitative than EI.
+    * - ``"thompson_sampling"`` or ``"thompson"``
+      - Draws one posterior sample per candidate. Exploration comes from
+        uncertainty in the sample rather than from ``xi``.
+
+.. code-block:: python
+
+    from gradient_free_optimizers import BayesianOptimizer, ForestOptimizer
+
+    opt = BayesianOptimizer(search_space, acquisition_function="ei")
+    opt = BayesianOptimizer(search_space, acquisition_function="pi", xi=0.01)
+    opt = ForestOptimizer(
+        search_space,
+        acquisition_function="thompson_sampling",
+        random_state=42,
+    )
 
 
 The xi Parameter
 ^^^^^^^^^^^^^^^^
 
-The ``xi`` parameter controls how much the algorithm explores uncertain regions
-vs. exploits known good regions:
+The ``xi`` parameter controls how much EI and PI explore uncertain regions vs.
+exploit known good regions. It is available for Bayesian and Forest optimizers.
+It is ignored by Thompson Sampling and is not part of TPE.
 
 .. code-block:: python
 
@@ -102,6 +142,8 @@ vs. exploits known good regions:
     - Start with default ``xi=0.03``
     - Increase if optimization converges too quickly to suboptimal solution
     - Decrease if optimization wastes iterations on poor regions
+    - Switch to ``"thompson_sampling"`` when stochastic exploration is preferred
+      over manually tuning ``xi``
 
 
 Algorithm Comparison

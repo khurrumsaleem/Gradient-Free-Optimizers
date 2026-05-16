@@ -16,7 +16,10 @@ from gradient_free_optimizers._array_backend import (
     random,
 )
 
-from .acquisition_function import ExpectedImprovement
+from .acquisition_function import (
+    create_acquisition_function,
+    normalize_acquisition_function_name,
+)
 from .smbo import SMBO
 from .surrogate_models import GPR
 
@@ -75,8 +78,13 @@ class BayesianOptimizer(SMBO):
     gpr : object, default=None
         Gaussian Process regressor instance. If None, uses default GPR.
     xi : float, default=0.03
-        Exploration-exploitation parameter for Expected Improvement.
-        Higher values favor exploration.
+        Exploration-exploitation parameter for Expected Improvement and
+        Probability of Improvement. Higher values favor exploration.
+    acquisition_function : str, default="expected_improvement"
+        Acquisition function used to score candidate positions. Supports
+        "expected_improvement", "probability_of_improvement", and
+        "thompson_sampling". Short aliases "ei", "pi", and "thompson" are
+        also accepted.
     """
 
     name = "Bayesian Optimization"
@@ -101,6 +109,7 @@ class BayesianOptimizer(SMBO):
         replacement: bool = True,
         gpr=None,
         xi: float = 0.03,
+        acquisition_function: str = "expected_improvement",
     ) -> None:
         super().__init__(
             search_space=search_space,
@@ -128,6 +137,9 @@ class BayesianOptimizer(SMBO):
 
         self.regr = self.gpr
         self.xi = xi
+        self.acquisition_function = normalize_acquisition_function_name(
+            acquisition_function
+        )
 
         max_pos = self.conv.max_positions
         n_dims = len(max_pos)
@@ -153,11 +165,17 @@ class BayesianOptimizer(SMBO):
         return (array(X, dtype=float) - self._x_norm_offset) / self._x_norm_denom
 
     def _expected_improvement(self) -> ndarray:
-        """Compute Expected Improvement for all candidate positions."""
+        """Compute acquisition values for all candidate positions."""
         self.pos_comb = self._sampling(self.all_pos_comb)
 
         pos_comb_norm = self._normalize_X(self.pos_comb)
-        acqu_func = ExpectedImprovement(self.regr, pos_comb_norm, self.xi)
+        acqu_func = create_acquisition_function(
+            self.acquisition_function,
+            self.regr,
+            pos_comb_norm,
+            self.xi,
+            rng=self._rng_acquisition,
+        )
         return acqu_func.calculate(self.X_sample, self.Y_sample)
 
     def _training(self) -> None:

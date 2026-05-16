@@ -191,7 +191,8 @@ class BayesianOptimizer(_BayesianOptimizer, Search):
         different GP libraries.
     xi : float, default=0.03
         Exploration-exploitation trade-off parameter for the Expected
-        Improvement (EI) acquisition function. Controls how much the
+        Improvement (EI) and Probability of Improvement (PI) acquisition
+        functions. Controls how much the
         optimizer values uncertain regions over predicted-good regions.
 
         - ``0.0``: Pure exploitation, always samples where the GP predicts
@@ -204,6 +205,16 @@ class BayesianOptimizer(_BayesianOptimizer, Search):
 
         Higher ``xi`` is useful early in optimization or when the search
         space is large relative to the number of evaluations.
+    acquisition_function : str, default="expected_improvement"
+        Acquisition function used to score candidate points.
+
+        - ``"expected_improvement"`` or ``"ei"``: Balance probability
+          and magnitude of improvement.
+        - ``"probability_of_improvement"`` or ``"pi"``: Maximize the
+          probability of beating the current best score.
+        - ``"thompson_sampling"`` or ``"thompson"``: Draw one posterior
+          sample per candidate and select by sampled score. ``xi`` is not
+          used by this acquisition function.
 
     Notes
     -----
@@ -278,6 +289,7 @@ class BayesianOptimizer(_BayesianOptimizer, Search):
         replacement: bool = True,
         gpr: object | None = None,
         xi: float = 0.03,
+        acquisition_function: str = "expected_improvement",
     ):
         if initialize is None:
             initialize = get_default_initialize()
@@ -300,4 +312,5 @@ class BayesianOptimizer(_BayesianOptimizer, Search):
             replacement=replacement,
             gpr=gpr,
             xi=xi,
+            acquisition_function=acquisition_function,
         )

@@ -5,10 +5,11 @@ Forest Optimizer
 The Forest Optimizer uses a tree-based ensemble (Extra Trees, Random Forest,
 or Gradient Boosting) as its surrogate model. The ensemble is trained on all
 observed (position, score) pairs, and each candidate position is scored by
-computing Expected Improvement from the ensemble's mean prediction and
-variance. The variance is derived from disagreement among individual trees:
-regions where tree predictions diverge indicate high uncertainty, which
-drives exploration of under-sampled areas.
+an acquisition function that uses the ensemble's mean prediction and variance.
+Expected Improvement is the default, while Probability of Improvement and
+Thompson Sampling are also available. The variance is derived from disagreement
+among individual trees: regions where tree predictions diverge indicate high
+uncertainty, which drives exploration of under-sampled areas.
 
 
 .. grid:: 2
@@ -48,7 +49,7 @@ Similar to Bayesian Optimization, but using tree ensembles:
 1. **Fit surrogate**: Train Random Forest/Extra Trees on observations
 2. **Predict**: Get predictions from all trees in the ensemble
 3. **Uncertainty**: Variance across tree predictions
-4. **Acquisition**: Expected Improvement using mean and variance
+4. **Acquisition**: Score candidates using the configured acquisition function
 5. **Select and evaluate**: Choose best acquisition, run objective
 
 .. note::
@@ -94,7 +95,12 @@ Parameters
     * - ``xi``
       - float
       - 0.03
-      - Exploration-exploitation trade-off
+      - Exploration-exploitation trade-off for EI and PI
+    * - ``acquisition_function``
+      - str
+      - "expected_improvement"
+      - Acquisition function: "expected_improvement", "probability_of_improvement",
+        or "thompson_sampling"
 
 
 Tree Regressor Options
@@ -114,6 +120,39 @@ Tree Regressor Options
         search_space,
         tree_regressor="random_forest",
         tree_para={"n_estimators": 200}
+    )
+
+
+Acquisition Functions
+^^^^^^^^^^^^^^^^^^^^^
+
+``acquisition_function`` chooses how the forest mean and variance estimates are
+turned into candidate scores. The same options are available as in
+:doc:`bayesian`, but the uncertainty estimate comes from disagreement among
+trees instead of GP covariance.
+
+.. list-table::
+    :header-rows: 1
+    :widths: 30 70
+
+    * - Value
+      - Behavior
+    * - ``"expected_improvement"`` or ``"ei"``
+      - Balances improvement probability and improvement magnitude.
+    * - ``"probability_of_improvement"`` or ``"pi"``
+      - Maximizes the probability of beating the current best score.
+    * - ``"thompson_sampling"`` or ``"thompson"``
+      - Draws one posterior-style sample per candidate from the forest mean and
+        variance estimates. ``xi`` is not used.
+
+.. code-block:: python
+
+    opt = ForestOptimizer(search_space, acquisition_function="ei")
+    opt = ForestOptimizer(search_space, acquisition_function="pi", xi=0.01)
+    opt = ForestOptimizer(
+        search_space,
+        acquisition_function="thompson_sampling",
+        random_state=42,
     )
 
 
@@ -219,8 +258,10 @@ Trade-offs
 ----------
 
 - **Exploration vs. exploitation**: ``xi`` controls the trade-off as with other
-  SMBO methods. The tree ensemble's variance estimate tends to be noisier than
-  a GP's, which can provide natural exploration through prediction disagreement.
+  ``mu``/``sigma`` acquisition methods when using EI or PI. Thompson Sampling
+  ignores ``xi`` and explores through stochastic samples. The tree ensemble's
+  variance estimate tends to be noisier than a GP's, which can provide natural
+  exploration through prediction disagreement.
 - **Computational overhead**: O(n log n) training per iteration, much better
   than GP's O(n^3). The ``tree_para`` configuration (especially ``n_estimators``)
   directly affects this overhead.
