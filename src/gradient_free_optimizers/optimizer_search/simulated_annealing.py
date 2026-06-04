@@ -23,11 +23,13 @@ class SimulatedAnnealingOptimizer(_SimulatedAnnealingOptimizer, Search):
     to the annealing schedule, the acceptance probability for worse solutions
     decreases, and the algorithm gradually focuses on exploitation.
 
-    The acceptance probability follows the Metropolis criterion: worse solutions
-    are accepted with probability exp(-delta/T), where delta is the score
-    difference and T is the current temperature. This allows the algorithm to
-    escape local optima early in the search while converging to good solutions
-    later.
+    By default, the acceptance probability follows the Metropolis criterion:
+    worse solutions are accepted with probability exp(delta/T), where delta is
+    the normalized score difference and T is the current temperature. Alternative
+    Barker and deterministic threshold criteria can be selected with
+    ``acceptance``. The temperature schedule defaults to exponential cooling,
+    and alternative linear, logarithmic, Cauchy, quadratic, and adaptive
+    schedules can be selected with ``cooling``.
 
     The algorithm is well-suited for:
 
@@ -194,9 +196,13 @@ class SimulatedAnnealingOptimizer(_SimulatedAnnealingOptimizer, Search):
         Higher values act like a local beam search, giving the optimizer
         more information about the local landscape at each iteration.
     annealing_rate : float, default=0.97
-        Multiplicative cooling factor applied to the temperature at each
-        iteration. The temperature at iteration t is
-        ``start_temp * annealing_rate^t``.
+        Schedule-specific cooling configuration. For ``cooling="exponential"``,
+        this is the multiplicative factor applied to the temperature at each
+        iteration, so the temperature at iteration t is
+        ``start_temp * annealing_rate^t``. For ``cooling="quadratic"``, this is
+        the coefficient in ``start_temp / (1 + annealing_rate * t^2)``. For
+        ``cooling="linear"``, ``"logarithmic"``, and ``"cauchy"``, values closer
+        to 1.0 produce slower cooling via the scale ``1 - annealing_rate``.
 
         - ``0.8-0.9``: Fast cooling, quick convergence but limited
           exploration. Good for unimodal problems.
@@ -220,10 +226,22 @@ class SimulatedAnnealingOptimizer(_SimulatedAnnealingOptimizer, Search):
         The temperature interacts with the score scale of your objective
         function. If scores span a large range, higher ``start_temp`` may
         be needed to enable meaningful exploration.
+    cooling : {"exponential", "linear", "logarithmic", "cauchy",
+        "quadratic", "adaptive"}, default="exponential"
+        Cooling schedule used to update the temperature after each evaluated
+        candidate. ``"exponential"`` preserves the historical behavior.
+        ``"adaptive"`` adjusts temperature from the recent acceptance rate.
+    acceptance : {"metropolis", "barker", "threshold"}, default="metropolis"
+        Rule used when deciding whether to accept a worse candidate.
+        ``"metropolis"`` is the classic simulated annealing rule,
+        ``"barker"`` is the logistic Barker rule, and ``"threshold"`` accepts
+        deterministically when the normalized degradation is within the current
+        temperature threshold.
 
     Notes
     -----
-    The acceptance decision follows the Metropolis criterion:
+    With the default settings, the acceptance decision follows the Metropolis
+    criterion:
 
     .. math::
 
@@ -287,6 +305,15 @@ class SimulatedAnnealingOptimizer(_SimulatedAnnealingOptimizer, Search):
         n_neighbours: int = 3,
         annealing_rate: float = 0.97,
         start_temp: float = 1,
+        cooling: Literal[
+            "exponential",
+            "linear",
+            "logarithmic",
+            "cauchy",
+            "quadratic",
+            "adaptive",
+        ] = "exponential",
+        acceptance: Literal["metropolis", "barker", "threshold"] = "metropolis",
     ):
         if initialize is None:
             initialize = get_default_initialize()
@@ -306,4 +333,6 @@ class SimulatedAnnealingOptimizer(_SimulatedAnnealingOptimizer, Search):
             n_neighbours=n_neighbours,
             annealing_rate=annealing_rate,
             start_temp=start_temp,
+            cooling=cooling,
+            acceptance=acceptance,
         )

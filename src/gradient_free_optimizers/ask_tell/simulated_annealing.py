@@ -33,9 +33,16 @@ class SimulatedAnnealingOptimizer(_SimulatedAnnealingOptimizer, AskTell):
     n_neighbours : int, default=3
         Number of neighbors to evaluate per iteration.
     annealing_rate : float, default=0.97
-        Multiplicative cooling factor applied to temperature each iteration.
+        Schedule-specific cooling configuration. For exponential cooling this
+        is the multiplicative factor applied to temperature each iteration.
     start_temp : float, default=1
         Initial temperature controlling acceptance probability.
+    cooling : str, default="exponential"
+        Cooling schedule: "exponential", "linear", "logarithmic", "cauchy",
+        "quadratic", or "adaptive".
+    acceptance : str, default="metropolis"
+        Acceptance criterion for worse moves: "metropolis", "barker", or
+        "threshold".
     """
 
     def __init__(
@@ -51,6 +58,15 @@ class SimulatedAnnealingOptimizer(_SimulatedAnnealingOptimizer, AskTell):
         n_neighbours: int = 3,
         annealing_rate: float = 0.97,
         start_temp: float = 1,
+        cooling: Literal[
+            "exponential",
+            "linear",
+            "logarithmic",
+            "cauchy",
+            "quadratic",
+            "adaptive",
+        ] = "exponential",
+        acceptance: Literal["metropolis", "barker", "threshold"] = "metropolis",
     ):
         if constraints is None:
             constraints = []
@@ -67,6 +83,8 @@ class SimulatedAnnealingOptimizer(_SimulatedAnnealingOptimizer, AskTell):
             n_neighbours=n_neighbours,
             annealing_rate=annealing_rate,
             start_temp=start_temp,
+            cooling=cooling,
+            acceptance=acceptance,
         )
 
         self._process_initial_evaluations(initial_evaluations)
