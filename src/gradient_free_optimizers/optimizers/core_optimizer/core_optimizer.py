@@ -898,9 +898,11 @@ class CoreOptimizer(ABC):
         ``nth_trial``.
 
         ``move_distance`` is the Euclidean distance between the candidate about
-        to be evaluated and the current accepted position, with each dimension
-        normalized by its index span (``conv.max_positions``). It measures how
-        far the optimizer steps this iteration and lies in
+        to be evaluated and the current accepted position. Continuous values
+        and distribution quantiles are normalized by their bounds, discrete
+        numerical positions by their index span, and categorical changes use a
+        binary distance (zero when unchanged, one when changed). It measures
+        how far the optimizer steps this iteration and lies in
         ``[0, sqrt(n_dims)]``. It is ``None`` during the initialization phase
         and before a current position exists, since scattered start points are
         not steps. For population optimizers the current position is the most
@@ -922,10 +924,15 @@ class CoreOptimizer(ABC):
         if pos_new is None or pos_current is None or self.search_state == "init":
             shared["move_distance"] = None
         else:
-            max_positions = self.conv.max_positions
             total = 0.0
-            for idx in range(len(pos_new)):
-                span = float(max_positions[idx])
+            for idx, dim_info in enumerate(self.conv.dim_infos):
+                if dim_info.dim_type == DimensionType.CATEGORICAL:
+                    delta = float(pos_new[idx] != pos_current[idx])
+                    total += delta * delta
+                    continue
+
+                lower, upper = dim_info.bounds
+                span = float(upper) - float(lower)
                 if span <= 0.0:
                     continue
                 delta = (float(pos_new[idx]) - float(pos_current[idx])) / span
