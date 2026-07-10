@@ -88,6 +88,30 @@ def test_pso_temp_weight_adds_velocity_vibration():
     assert -1.0 <= vibration[0] <= 1.0
 
 
+def test_pso_uses_per_dimension_random_coefficients():
+    opt = ParticleSwarmOptimizer(
+        {"x": (-10.0, 10.0), "y": (-10.0, 10.0)},
+        initialize={"warm_start": [{"x": 0.0, "y": 0.0}]},
+        population=1,
+        random_state=0,
+        inertia=0.0,
+        cognitive_weight=1.0,
+        social_weight=0.0,
+        temp_weight=0.0,
+    )
+    particle = opt.particles[0]
+    particle._pos_current = np.array([0.0, 0.0])
+    particle._pos_best = np.array([10.0, 10.0])
+    particle.global_pos_best = np.array([0.0, 0.0])
+    particle.velo = np.array([0.0, 0.0])
+    opt.p_current = particle
+
+    random_vectors = iter([np.array([0.2, 0.8]), np.array([0.0, 0.0])])
+    opt._random_vector = lambda n_dims: next(random_vectors)
+
+    assert list(opt._compute_pso_position()) == pytest.approx([2.0, 8.0])
+
+
 def test_pso_constraint_retry_regenerates_candidate_and_rolls_back_velocity():
     opt = ParticleSwarmOptimizer(
         {"x": (-10.0, 10.0)},
