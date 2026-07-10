@@ -209,6 +209,33 @@ class TestBayesianOptimizerAPI:
         opt = BayesianOptimizer(SEARCH_SPACE, xi=0.05)
         opt.search(objective, n_iter=1, verbosity=False)
 
+    @pytest.mark.parametrize(
+        "acquisition_function",
+        [
+            "expected_improvement",
+            "ei",
+            "probability_of_improvement",
+            "pi",
+            "thompson_sampling",
+            "thompson",
+        ],
+    )
+    def test_acquisition_function_parameter(self, acquisition_function):
+        """Test acquisition_function parameter accepts supported values."""
+        opt = BayesianOptimizer(
+            SEARCH_SPACE,
+            initialize={"random": 2},
+            acquisition_function=acquisition_function,
+            sampling=False,
+            random_state=42,
+        )
+        opt.search(objective, n_iter=4, verbosity=False)
+
+    def test_invalid_acquisition_function(self):
+        """Test invalid acquisition_function fails early."""
+        with pytest.raises(ValueError, match="acquisition_function"):
+            BayesianOptimizer(SEARCH_SPACE, acquisition_function="invalid")
+
     def test_gpr_parameter(self):
         """Test gpr parameter exists and accepts GPR-like object."""
         # Using default gpr object
@@ -229,6 +256,7 @@ class TestBayesianOptimizerAPI:
             sampling={"random": 1000000},
             replacement=True,
             xi=0.03,
+            acquisition_function="expected_improvement",
         )
         opt.search(objective, n_iter=1, verbosity=False)
 
@@ -307,6 +335,33 @@ class TestForestOptimizerAPI:
         opt = ForestOptimizer(SEARCH_SPACE, xi=0.05)
         opt.search(objective, n_iter=1, verbosity=False)
 
+    @pytest.mark.parametrize(
+        "acquisition_function",
+        [
+            "expected_improvement",
+            "ei",
+            "probability_of_improvement",
+            "pi",
+            "thompson_sampling",
+            "thompson",
+        ],
+    )
+    def test_acquisition_function_parameter(self, acquisition_function):
+        """Test acquisition_function parameter accepts supported values."""
+        opt = ForestOptimizer(
+            SEARCH_SPACE,
+            initialize={"random": 2},
+            acquisition_function=acquisition_function,
+            sampling=False,
+            random_state=42,
+        )
+        opt.search(objective, n_iter=4, verbosity=False)
+
+    def test_invalid_acquisition_function(self):
+        """Test invalid acquisition_function fails early."""
+        with pytest.raises(ValueError, match="acquisition_function"):
+            ForestOptimizer(SEARCH_SPACE, acquisition_function="invalid")
+
     def test_all_parameters_explicit(self):
         """Test all parameters can be set explicitly."""
         opt = ForestOptimizer(
@@ -323,5 +378,6 @@ class TestForestOptimizerAPI:
             tree_regressor="extra_tree",
             tree_para={"n_estimators": 100},
             xi=0.03,
+            acquisition_function="expected_improvement",
         )
         opt.search(objective, n_iter=1, verbosity=False)

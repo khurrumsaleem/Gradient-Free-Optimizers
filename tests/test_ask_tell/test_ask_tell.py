@@ -552,6 +552,27 @@ def test_bayesian_optimizer_custom_params():
     assert opt.best_para is not None
 
 
+@pytest.mark.parametrize(
+    "acquisition_function",
+    ["probability_of_improvement", "thompson_sampling", "pi", "thompson"],
+)
+@pytest.mark.parametrize("Optimizer", [BayesianOptimizer, ForestOptimizer])
+def test_smb_optimizer_acquisition_functions(Optimizer, acquisition_function):
+    """SMBO ask/tell optimizers should support acquisition functions."""
+    opt = Optimizer(
+        search_space,
+        initial_evaluations=_make_init_evals(5),
+        acquisition_function=acquisition_function,
+        random_state=1,
+    )
+
+    for _ in range(10):
+        p = opt.ask()
+        opt.tell([objective(p[0])])
+
+    assert opt.best_para is not None
+
+
 # ── High-dimensional / edge cases ───────────────────────────────────
 
 

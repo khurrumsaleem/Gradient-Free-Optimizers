@@ -25,4 +25,7 @@ def _base_para_test_func(opt_para, optimizer):
     para_key = list(opt_para.keys())[0]
     para_value = getattr(opt, para_key)
 
-    assert para_value is opt_para[para_key]
+    if para_key == "acquisition_function":
+        assert para_value == opt_para[para_key]
+    else:
+        assert para_value is opt_para[para_key]

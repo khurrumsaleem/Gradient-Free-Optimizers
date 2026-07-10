@@ -332,6 +332,7 @@ OPTIMIZER_CONFIGS = [
             "replacement": True,
             "gpr": None,
             "xi": 0.05,
+            "acquisition_function": "probability_of_improvement",
         },
     ),
     (
@@ -358,6 +359,7 @@ OPTIMIZER_CONFIGS = [
             "tree_regressor": "extra_tree",
             "tree_para": {"n_estimators": 50},
             "xi": 0.05,
+            "acquisition_function": "probability_of_improvement",
         },
     ),
 ]
