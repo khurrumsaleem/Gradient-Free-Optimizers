@@ -150,6 +150,8 @@ OPTIMIZER_CONFIGS = [
             "n_neighbours": 5,
             "annealing_rate": 0.95,
             "start_temp": 2,
+            "cooling": "linear",
+            "acceptance": "barker",
         },
     ),
     (

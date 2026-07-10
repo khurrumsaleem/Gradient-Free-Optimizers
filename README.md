@@ -290,6 +290,8 @@ opt = SimulatedAnnealingOptimizer(
     search_space,
     start_temp=1.2,
     annealing_rate=0.99,
+    cooling="exponential",
+    acceptance="metropolis",
 )
 opt.search(sphere, n_iter=1000)
 ```

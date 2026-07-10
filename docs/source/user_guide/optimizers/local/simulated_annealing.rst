@@ -4,12 +4,12 @@ Simulated Annealing
 
 Simulated Annealing accepts worse solutions with a probability that decreases
 over time according to a temperature schedule. The acceptance probability for a
-candidate with score degradation ``delta`` is ``exp(delta / temperature)``, where
-the temperature starts at ``start_temp`` and decays by a factor of
-``annealing_rate`` each iteration. At high temperatures, the algorithm accepts
-nearly all moves, including substantially worse ones. As the temperature
-approaches zero, acceptance of worse solutions becomes negligible and the
-algorithm converges to greedy Hill Climbing behavior.
+candidate with score degradation ``delta`` uses the Metropolis rule by default:
+``exp(delta / temperature)``. The temperature starts at ``start_temp`` and then
+changes according to ``cooling``. At high temperatures, the algorithm accepts
+many moves, including substantially worse ones. As the temperature approaches
+zero, acceptance of worse solutions becomes negligible and the algorithm
+converges to greedy Hill Climbing behavior.
 
 
 .. grid:: 2
@@ -40,10 +40,10 @@ this library. Stochastic Hill Climbing offers a constant acceptance rate with no
 transition, while Repulsing Hill Climbing adapts its step size reactively.
 Simulated Annealing follows a predetermined schedule regardless of search
 progress. Choose it for multi-modal landscapes where early broad exploration is
-needed before converging to a specific region. The two schedule parameters
-(``start_temp`` and ``annealing_rate``) must be tuned relative to the iteration
-budget: slower cooling requires more iterations to converge but explores more of
-the search space.
+needed before converging to a specific region. The main schedule parameters
+(``start_temp``, ``annealing_rate``, and ``cooling``) must be tuned relative to
+the iteration budget: slower cooling requires more iterations to converge but
+explores more of the search space.
 
 
 Algorithm
@@ -54,19 +54,19 @@ At each iteration:
 1. Generate a neighbor within ``epsilon`` distance
 2. Calculate score difference: ``delta = new_score - current_score``
 3. If ``delta > 0`` (improvement): accept the move
-4. If ``delta < 0`` (worse): accept with probability ``exp(delta / temperature)``
-5. Decrease temperature: ``temperature = temperature * annealing_rate``
+4. If ``delta < 0`` (worse): apply the configured ``acceptance`` criterion
+5. Update temperature with the configured ``cooling`` schedule
 
 As temperature decreases, the probability of accepting worse solutions
 approaches zero, and the algorithm behaves more like Hill Climbing.
 
 .. note::
 
-    The acceptance probability ``exp(delta / temperature)``
-    depends on both the quality difference and the current temperature. Early
-    in the search, even large degradations are accepted frequently. Late in
-    the search, only tiny degradations have any chance. This provides a smooth,
-    principled transition from exploration to exploitation.
+    With the default Metropolis criterion, ``exp(delta / temperature)`` depends
+    on both the quality difference and the current temperature. Early in the
+    search, even large degradations can be accepted. Late in the search, only
+    tiny degradations have any chance. This provides a smooth transition from
+    exploration to exploitation.
 
 .. figure:: /_static/diagrams/simulated_annealing_flowchart.svg
     :alt: Simulated Annealing algorithm flowchart
@@ -90,6 +90,66 @@ The Temperature Schedule
     - Iteration 100: temp = 0.048
     - Iteration 200: temp = 0.002
 
+The ``cooling`` parameter selects the temperature schedule:
+
+.. list-table::
+    :header-rows: 1
+    :widths: 20 45 35
+
+    * - ``cooling``
+      - Temperature after t completed annealing steps
+      - Character
+    * - ``"exponential"``
+      - ``start_temp * annealing_rate^t``
+      - Historical default, fast and simple
+    * - ``"linear"``
+      - ``start_temp * max(0, 1 - (1 - annealing_rate) * t)``
+      - Finite cooling with a direct horizon
+    * - ``"logarithmic"``
+      - ``start_temp * log(2) / log(2 + (1 - annealing_rate) * t)``
+      - Very slow cooling, normalized so t=0 starts at ``start_temp``
+    * - ``"cauchy"``
+      - ``start_temp / (1 + (1 - annealing_rate) * t)``
+      - Fast Simulated Annealing style schedule
+    * - ``"quadratic"``
+      - ``start_temp / (1 + annealing_rate * t^2)``
+      - Faster late-stage cooling; here ``annealing_rate`` is the coefficient
+    * - ``"adaptive"``
+      - Exponential base cooling adjusted by recent acceptance rate
+      - Reheats when too few moves are accepted; cools faster when too many are
+        accepted
+
+For ``"linear"``, ``"logarithmic"``, and ``"cauchy"``, values of
+``annealing_rate`` close to 1.0 cool more slowly because the effective scale is
+``1 - annealing_rate``. For ``"quadratic"``, ``annealing_rate`` is the quadratic
+coefficient and smaller values cool more slowly.
+
+
+Acceptance Criteria
+-------------------
+
+The ``acceptance`` parameter controls how worse candidates are handled:
+
+In the formulas below, ``delta`` refers to the optimizer's normalized score
+difference.
+
+.. list-table::
+    :header-rows: 1
+    :widths: 25 45 30
+
+    * - ``acceptance``
+      - Probability or rule
+      - Character
+    * - ``"metropolis"``
+      - ``min(1, exp(delta / temperature))``
+      - Classic simulated annealing default
+    * - ``"barker"``
+      - ``1 / (1 + exp(-delta / temperature))``
+      - Logistic rule, more conservative for worse moves
+    * - ``"threshold"``
+      - Accept when ``delta >= -temperature``
+      - Deterministic threshold accepting
+
 
 Parameters
 ----------
@@ -110,6 +170,14 @@ Parameters
       - float
       - 1.0
       - Initial temperature
+    * - ``cooling``
+      - str
+      - "exponential"
+      - Temperature schedule
+    * - ``acceptance``
+      - str
+      - "metropolis"
+      - Acceptance criterion for worse moves
     * - ``epsilon``
       - float
       - 0.03
@@ -129,8 +197,9 @@ Tuning the Temperature
 
 **annealing_rate:**
 
-- Higher (0.99): Slower cooling, more exploration, needs more iterations
-- Lower (0.90): Faster cooling, quicker convergence, may miss global optimum
+- Higher (0.99): Slower exponential, linear, logarithmic, and Cauchy cooling
+- Lower (0.90): Faster exponential, linear, logarithmic, and Cauchy cooling
+- For ``cooling="quadratic"``, smaller values cool more slowly
 
 **start_temp:**
 
@@ -164,6 +233,8 @@ Example
         search_space,
         annealing_rate=0.98,   # Slow cooling
         start_temp=1.5,        # High initial temperature
+        cooling="exponential",
+        acceptance="metropolis",
     )
 
     opt.search(schwefel, n_iter=2000)
@@ -186,20 +257,24 @@ When to Use
 - **vs. Parallel Tempering**: SA uses one temperature, PT uses multiple in parallel
 
 
-Adaptive Strategies
--------------------
+Adaptive Cooling
+----------------
 
-For very long runs, you might want to adjust the annealing rate:
+For very long runs, adaptive cooling can react to the observed acceptance rate:
 
 .. code-block:: python
 
-    # Slower cooling for more iterations
     opt = SimulatedAnnealingOptimizer(
         search_space,
-        annealing_rate=0.995,  # Very slow cooling
+        cooling="adaptive",
+        annealing_rate=0.97,
         start_temp=2.0,
     )
     opt.search(objective, n_iter=5000)
+
+Adaptive cooling uses an exponential base update. Over a window of recent
+decisions, it reheats if too few moves are accepted and cools faster if too many
+moves are accepted. Use ``annealing_rate`` in ``(0, 1]`` for adaptive cooling.
 
 
 Higher-Dimensional Example
@@ -227,6 +302,7 @@ Higher-Dimensional Example
         annealing_rate=0.995,
         start_temp=2.0,
         epsilon=0.08,
+        cooling="logarithmic",
     )
 
     opt.search(rastrigin_5d, n_iter=5000)
@@ -237,8 +313,9 @@ Higher-Dimensional Example
 Trade-offs
 ----------
 
-- **Exploration vs. exploitation**: Controlled by ``annealing_rate`` and
-  ``start_temp``. Slower cooling gives more exploration but needs more iterations.
+- **Exploration vs. exploitation**: Controlled by ``start_temp``, ``cooling``,
+  ``annealing_rate``, and ``acceptance``. Slower cooling gives more exploration
+  but needs more iterations.
 - **Computational overhead**: Same as Hill Climbing (minimal).
 - **Parameter sensitivity**: The cooling schedule is critical. If temperature drops
   too fast, the algorithm becomes a greedy Hill Climber before exploring enough.

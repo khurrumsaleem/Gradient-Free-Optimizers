@@ -272,6 +272,16 @@ class TestSimulatedAnnealingOptimizerAPI:
         opt = SimulatedAnnealingOptimizer(SEARCH_SPACE, start_temp=2)
         opt.search(objective, n_iter=1, verbosity=False)
 
+    def test_cooling_parameter(self):
+        """Test cooling parameter exists and accepts supported schedules."""
+        opt = SimulatedAnnealingOptimizer(SEARCH_SPACE, cooling="cauchy")
+        opt.search(objective, n_iter=1, verbosity=False)
+
+    def test_acceptance_parameter(self):
+        """Test acceptance parameter exists and accepts supported criteria."""
+        opt = SimulatedAnnealingOptimizer(SEARCH_SPACE, acceptance="barker")
+        opt.search(objective, n_iter=1, verbosity=False)
+
     def test_all_parameters_explicit(self):
         """Test all parameters can be set explicitly."""
         opt = SimulatedAnnealingOptimizer(
@@ -286,6 +296,8 @@ class TestSimulatedAnnealingOptimizerAPI:
             n_neighbours=3,
             annealing_rate=0.97,
             start_temp=1,
+            cooling="exponential",
+            acceptance="metropolis",
         )
         opt.search(objective, n_iter=1, verbosity=False)
 

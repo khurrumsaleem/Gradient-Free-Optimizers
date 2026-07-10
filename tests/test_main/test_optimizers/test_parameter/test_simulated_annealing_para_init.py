@@ -28,6 +28,15 @@ simulated_annealing_para = [
     ({"start_temp": 0.5}),
     ({"start_temp": 3}),
     ({"start_temp": 10}),
+    ({"cooling": "exponential"}),
+    ({"cooling": "linear"}),
+    ({"cooling": "logarithmic"}),
+    ({"cooling": "cauchy"}),
+    ({"cooling": "quadratic", "annealing_rate": 0.01}),
+    ({"cooling": "adaptive"}),
+    ({"acceptance": "metropolis"}),
+    ({"acceptance": "barker"}),
+    ({"acceptance": "threshold"}),
 ]
 
 
