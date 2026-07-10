@@ -335,6 +335,28 @@ class CMAESOptimizer(BasePopulationOptimizer):
 
             self._sample_generation()
 
+    def _collect_state(self) -> dict:
+        """Expose scalar summaries of the sampling distribution for tracking.
+
+        Returns the current step size ``sigma``, which scales how far new
+        candidates are drawn from the distribution mean and is adapted each
+        generation by the CSA update in the previous step. When the
+        sqrt-eigenvalues ``_D`` of the covariance matrix are available and
+        strictly positive, also returns the covariance condition number
+        ``(max(D) / min(D)) ** 2``, a scalar describing how anisotropic the
+        search distribution has become. The full covariance matrix and the
+        eigenvalue vector themselves are never exposed, only these scalars.
+        """
+        state = {"sigma": float(self._cma_sigma)}
+
+        if self._D is not None and len(self._D) > 0:
+            d_min = float(min(self._D))
+            d_max = float(max(self._D))
+            if d_min > 0:
+                state["condition_number"] = (d_max / d_min) ** 2
+
+        return state
+
     def _update_cma(self):
         """Full CMA-ES parameter update after one generation.
 

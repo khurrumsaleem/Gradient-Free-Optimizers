@@ -24,6 +24,7 @@ from ._search_statistics import SearchStatistics
 from ._stopping_conditions import OptimizationStopper
 from ._storage import BaseStorage
 from ._times_tracker import TimesTracker
+from .tracking import InternalParamTracker
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -141,6 +142,7 @@ class Search(DistributedSearch, TimesTracker, SearchStatistics):
         optimum: Literal["maximum", "minimum"] = "maximum",
         callbacks: list[Callable[[CallbackInfo], bool | None]] | None = None,
         catch: dict[type[Exception], int | float] | None = None,
+        track_internals: bool = False,
     ) -> None:
         """Run the optimization loop.
 
@@ -351,6 +353,7 @@ class Search(DistributedSearch, TimesTracker, SearchStatistics):
             memory_warm_start,
             verbosity,
             catch,
+            track_internals,
         )
 
         nth_trial = 0
@@ -402,6 +405,17 @@ class Search(DistributedSearch, TimesTracker, SearchStatistics):
             "iteration": self._iter,
             "phase": "init" if self._iter < self.n_inits_norm else "iter",
         }
+        # Collect optimizer-internal parameters once, before the objective runs,
+        # so the values reflect the state that generated this candidate. The
+        # snapshot feeds both the in-memory tracker and (via _metadata) the
+        # dashboard decorator, which reads it as SearchParams._internal_state.
+        if self._param_tracker is not None:
+            internal_state = self._collect_shared_state()
+            internal_state.update(self._collect_state())
+            self.adapter._metadata["internal_state"] = internal_state
+            self._param_tracker.collect(
+                self._iter, self.adapter._metadata["phase"], internal_state
+            )
         result, params = self.adapter(pos)
         self.eval_times.append(time.time() - t)
         # Store position instead of params dict for memory efficiency
@@ -423,6 +437,7 @@ class Search(DistributedSearch, TimesTracker, SearchStatistics):
         memory_warm_start: pd.DataFrame | None,
         verbosity: list[str] | Literal[False],
         catch: dict[type[Exception], int | float] | None = None,
+        track_internals: bool = False,
     ) -> None:
         objective_function = self._init_distributed(objective_function, catch)
 
@@ -467,6 +482,10 @@ class Search(DistributedSearch, TimesTracker, SearchStatistics):
 
         # Invalidate cached DataFrame since new results will be added
         self._search_data_cache = None
+
+        # Optional internal-parameter tracking. None means the per-iteration
+        # hook in _evaluate_position short-circuits and the run is unaffected.
+        self._param_tracker = InternalParamTracker() if track_internals else None
 
         if self.verbosity is False:
             self.verbosity = []
@@ -555,6 +574,31 @@ class Search(DistributedSearch, TimesTracker, SearchStatistics):
     def search_data(self, value: pd.DataFrame) -> None:
         """Allow direct assignment for backward compatibility."""
         self._search_data_cache = value
+
+    @property
+    def _internal_data(self) -> list[dict] | None:
+        """Per-iteration optimizer-internal parameters from the last search.
+
+        Returns a list of records in evaluation order, one per objective
+        evaluation, each a flat dict ``{"iteration": int, "phase": str,
+        **shared_state, **internal_state}``. Every record carries the shared,
+        optimizer-independent keys ``iters_since_best`` (evaluations since the
+        last improvement) and ``move_distance`` (normalized step length, or
+        ``None`` during initialization). On top of those, *internal_state* is
+        optimizer-specific and defined by each optimizer's ``_collect_state``
+        (for example ``temperature`` for simulated annealing or
+        ``velocity_norm`` for particle swarm optimization).
+
+        Returns ``None`` when the last :meth:`search` call did not pass
+        ``track_internals=True``. This is deliberately distinct from an empty
+        list: ``None`` means tracking was off, ``[]`` would mean tracking was
+        on but produced no records.
+
+        Convert to a DataFrame with ``pandas.DataFrame(opt.internal_data)``.
+        """
+        if self._param_tracker is None:
+            return None
+        return self._param_tracker.records
 
     @property
     def diagnostics(self):

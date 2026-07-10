@@ -337,6 +337,23 @@ class PowellsMethod(BaseOptimizer):
         # Current position updated in _finish_direction_search when line search done.
         self._update_best(self._pos_new, score_new)
 
+    def _collect_state(self) -> dict:
+        """Expose the evolving Powell direction-cycle state for tracking.
+
+        Reports which conjugate direction the method is currently searching
+        along (``current_direction_idx``, advanced in
+        ``_finish_direction_search`` and reset each cycle) and whether the
+        per-cycle improvement has dropped below ``convergence_threshold``
+        (``converged``, set in ``_complete_cycle``). Both progress over the
+        course of a run and reflect state updated in earlier steps, so they
+        are safe to read before the current candidate is scored. The
+        ``line_searcher`` internals are intentionally not descended into.
+        """
+        return {
+            "current_direction_idx": self.current_direction_idx,
+            "converged": int(bool(self.converged)),
+        }
+
     def _iterate_batch(self, n):
         """Generate one line search position plus random exploration positions."""
         positions = [self._generate_position()]

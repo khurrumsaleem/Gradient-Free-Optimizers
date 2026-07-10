@@ -96,6 +96,18 @@ class RandomAnnealingOptimizer(HillClimbingOptimizer):
         self.start_temp = start_temp
         self.temp = start_temp
 
+    def _collect_state(self) -> dict:
+        """Expose the evolving annealing temperature for internal-parameter tracking.
+
+        The temperature is the single quantity that governs how the current
+        candidate was generated: it scales the step size (epsilon * temp) for
+        every dimension type, so it shrinks the perturbation as the search
+        cools. It is returned as-is because, unlike Simulated Annealing, Random
+        Annealing has no separate step counter or score-dependent acceptance
+        probability to report.
+        """
+        return {"temperature": float(self.temp)}
+
     def _iterate_continuous_batch(self) -> ndarray:
         """Generate new continuous values with temperature-scaled step size.
 

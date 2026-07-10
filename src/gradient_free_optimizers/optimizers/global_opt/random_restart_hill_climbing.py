@@ -87,6 +87,20 @@ class RandomRestartHillClimbingOptimizer(HillClimbingOptimizer):
         )
         self.n_iter_restart = n_iter_restart
 
+    def _collect_state(self) -> dict:
+        """Expose the restart cadence for internal-parameter tracking.
+
+        Reports how many iterations have elapsed since the last random
+        restart, computed as ``nth_trial`` modulo ``n_iter_restart``. This
+        value rises from zero up to ``n_iter_restart - 1`` and resets at each
+        restart iteration, making the periodic escape-from-local-optima
+        behavior observable. When ``n_iter_restart`` is not positive no
+        restart cadence exists, so an empty dict is returned.
+        """
+        if self.n_iter_restart <= 0:
+            return {}
+        return {"iters_since_restart": self.nth_trial % self.n_iter_restart}
+
     def _generate_position(self):
         """Generate a position - either climbing or random restart.
 

@@ -126,6 +126,21 @@ class ParticleSwarmOptimizer(BasePopulationOptimizer):
         self._pso_new_pos = None
         self._pso_velocity_before_candidate = None
 
+    def _collect_state(self) -> dict:
+        """Expose the active particle's velocity magnitude for tracking.
+
+        ``self.p_current`` is the particle whose velocity update produced the
+        current candidate (set during iteration setup). The Euclidean norm of
+        its velocity vector is a scalar swarm-convergence indicator: it decays
+        toward zero as the swarm settles. Returns an empty dict before the
+        first particle is active.
+        """
+        particle = self.p_current
+        if particle is None or particle.velo is None:
+            return {}
+        velo_norm = sum(float(v) * float(v) for v in particle.velo) ** 0.5
+        return {"velocity_norm": velo_norm}
+
     def _on_init_pos(self, position) -> None:
         """Initialize current particle with the given position.
 

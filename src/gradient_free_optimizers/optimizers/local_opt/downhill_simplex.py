@@ -190,6 +190,27 @@ class DownhillSimplexOptimizer(BaseOptimizer):
 
         self.simplex_step = 1
 
+    def _collect_state(self) -> dict:
+        """Expose the simplex state-machine phase for internal-parameter tracking.
+
+        The downhill simplex algorithm has no continuously evolving control
+        parameter like a temperature. Its dynamics are governed by a discrete
+        state machine, so the most informative thing to track is which
+        transformation the simplex is currently performing. ``simplex_step``
+        is an integer phase: 1 = reflection, 2 = expansion, 3 = contraction,
+        4 = shrink. During a shrink the simplex compresses its vertices one at
+        a time, so ``compress_idx`` reports how far that sweep has progressed.
+
+        Returns an empty dict before the simplex is initialized (step 0), so
+        nothing is recorded until the state machine is actually running.
+        """
+        if self.simplex_step == 0:
+            return {}
+        return {
+            "simplex_step": int(self.simplex_step),
+            "compress_idx": int(self.compress_idx),
+        }
+
     def _compute_next_simplex_position(self) -> None:
         """Compute the full next position based on simplex state machine.
 

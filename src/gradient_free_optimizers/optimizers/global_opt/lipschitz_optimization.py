@@ -37,6 +37,7 @@ class LipschitzFunction:
 
     def __init__(self, position_l):
         self.position_l = position_l
+        self.lip_c = None
 
     def find_best_slope(self, X_sample, Y_sample):
         """Estimate Lipschitz constant from observed samples.
@@ -93,6 +94,7 @@ class LipschitzFunction:
             Upper bounds for each candidate position.
         """
         lip_c = self.find_best_slope(X_sample, Y_sample)
+        self.lip_c = lip_c
 
         positions_np = array(self.position_l)
         samples_np = array(X_sample)
@@ -192,6 +194,7 @@ class LipschitzOptimizer(SMBO):
             sampling=sampling,
             replacement=replacement,
         )
+        self._lip_c = None
 
     def _training(self) -> None:
         """Prepare candidate positions for Lipschitz bound computation.
@@ -221,6 +224,7 @@ class LipschitzOptimizer(SMBO):
         upper_bound_l = lip_func.calculate(
             self.X_sample, self.Y_sample, self._score_best
         )
+        self._lip_c = float(lip_func.lip_c)
         # Flatten from (n, 1) to (n,) for SMBO template compatibility
         return upper_bound_l.flatten()
 
@@ -244,3 +248,21 @@ class LipschitzOptimizer(SMBO):
         for pos, score in zip(positions, scores):
             self._pos_new = pos
             self._evaluate(score)
+
+    def _collect_state(self) -> dict:
+        """Expose the estimated Lipschitz constant for parameter tracking.
+
+        The Lipschitz constant is the largest absolute slope observed between
+        any pair of evaluated samples. It is the single quantity that drives
+        the acquisition bounds: larger values widen the upper bounds and make
+        the search more exploratory. It is recomputed from the current sample
+        set on every iteration inside ``_expected_improvement`` and stashed on
+        ``self._lip_c`` from the previous step, so tracking it shows how the
+        optimizer's slope estimate evolves as samples accumulate.
+
+        Returns an empty dict until the first bound computation has run, since
+        ``self._lip_c`` is ``None`` before any acquisition step.
+        """
+        if self._lip_c is None:
+            return {}
+        return {"lipschitz_constant": float(self._lip_c)}

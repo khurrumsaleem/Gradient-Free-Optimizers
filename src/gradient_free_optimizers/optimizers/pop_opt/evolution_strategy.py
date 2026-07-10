@@ -126,6 +126,31 @@ class EvolutionStrategyOptimizer(BasePopulationOptimizer):
         if self.replace_parents and self.offspring < len(self.individuals):
             raise ValueError("replace_parents=True requires offspring >= population")
 
+    def _collect_state(self) -> dict:
+        """Expose the active individual's self-adaptive mutation step size.
+
+        Evolution Strategy adapts a per-individual Gaussian step size
+        ``sigma`` via Schwefel's (1981) log-normal rule. The currently
+        selected parent is held in ``self.p_current`` and its committed step
+        size lives on ``Individual.sigma`` (initialized from ``epsilon``).
+        Tracking this scalar shows how the search step contracts or expands
+        over the run, which is the defining adaptive quantity of ES.
+
+        Returns the committed ``sigma`` of the active individual rather than
+        the tentative ``sigma_new`` candidate, because the candidate is only
+        adopted after its score is known, which has not happened when this
+        hook runs.
+        """
+        individual = self.p_current
+        if individual is None:
+            return {}
+
+        sigma = self._individual_sigma(individual)
+        if sigma is None:
+            return {}
+
+        return {"sigma": float(sigma)}
+
     def _discrete_recombination(self, parent_pos_l, crossover_rates=None):
         """Combine parent positions using discrete recombination.
 

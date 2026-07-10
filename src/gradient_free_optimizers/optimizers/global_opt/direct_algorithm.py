@@ -285,6 +285,18 @@ class DirectAlgorithm(BaseOptimizer):
         self.subspace_l: list[SubSpace] = []
         self.current_subspace: SubSpace | None = None
 
+    def _collect_state(self) -> dict:
+        """Expose the current subdivision granularity for internal-parameter tracking.
+
+        DIRECT progresses by splitting the search space into ever more
+        hyperrectangles, so the number of active subspaces grows over the run
+        and reflects how finely the space has been partitioned. Returns an
+        empty dict when the subspace list has not been initialized yet.
+        """
+        if self.subspace_l is None:
+            return {}
+        return {"n_subspaces": len(self.subspace_l)}
+
     def _on_finish_initialization(self) -> None:
         """Initialize with the entire search space as one subspace."""
         subspace = SubSpace(

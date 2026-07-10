@@ -141,6 +141,16 @@ class RandomSearchOptimizer(BaseOptimizer):
         # Simply update best if this is better
         self._update_best(self._pos_new, score_new)
 
+    def _collect_state(self) -> dict:
+        """Expose internal state for internal-parameter tracking.
+
+        Random search keeps no evolving internal state. Each iteration samples
+        a position independently and the algorithm carries no temperature,
+        velocity, surrogate, or step-size that changes over time. There is
+        therefore nothing meaningful to track, so this returns an empty dict.
+        """
+        return {}
+
     def _iterate_batch(self, n):
         """Generate n independent random positions."""
         return [self._generate_position() for _ in range(n)]

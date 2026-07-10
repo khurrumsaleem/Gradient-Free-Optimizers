@@ -139,6 +139,9 @@ class SMBO(BaseOptimizer):
         # Cache for surrogate-proposed position (cleared after each iteration)
         self._cached_proposed_pos = None
 
+        # Most recent best acquisition value, stashed for state tracking
+        self._last_acq_max = None
+
     def _init_warm_start_smbo(self, search_data: pd.DataFrame | None) -> None:
         """Initialize X_sample and Y_sample from previous optimization data.
 
@@ -294,6 +297,9 @@ class SMBO(BaseOptimizer):
         try:
             self._training()
             exp_imp = self._expected_improvement()
+            self._last_acq_max = (
+                float(max(float(v) for v in exp_imp)) if len(exp_imp) else None
+            )
             index_best = list(exp_imp.argsort()[::-1])
             self._cached_proposed_pos = self.pos_comb[index_best[0]]
         except ValueError:

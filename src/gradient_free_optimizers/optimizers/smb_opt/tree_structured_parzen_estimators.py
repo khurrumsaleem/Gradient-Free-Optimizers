@@ -223,3 +223,13 @@ class TreeStructuredParzenEstimators(SMBO):
         for pos, score in zip(positions, scores):
             self._pos_new = pos
             self._evaluate(score)
+
+    def _collect_state(self) -> dict:
+        """Expose TPE acquisition state for internal-parameter tracking.
+
+        Reports the quantile split parameter ``gamma_tpe`` and the best
+        acquisition value (the highest l(x)/g(x) density ratio) from the most
+        recent surrogate-driven iteration. ``best_acquisition`` is None until
+        the first model-based iteration has scored candidate positions.
+        """
+        return {"gamma_tpe": self.gamma_tpe, "best_acquisition": self._last_acq_max}

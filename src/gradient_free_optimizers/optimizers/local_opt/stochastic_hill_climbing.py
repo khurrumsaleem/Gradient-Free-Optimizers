@@ -90,6 +90,23 @@ class StochasticHillClimbingOptimizer(HillClimbingOptimizer):
         self.n_transitions = 0
         self.n_considered_transitions = 0
 
+    def _collect_state(self) -> dict:
+        """Expose the evolving transition counters for internal-parameter tracking.
+
+        Reports the cumulative number of accepted worse-solution transitions and
+        the cumulative number of worse solutions that were considered for
+        acceptance, together with the static base acceptance probability. These
+        counters are updated in the previous evaluation step, so they are well
+        defined when the tracking hook runs before the current candidate's score
+        is known. The realized acceptance probability is deliberately omitted
+        because it depends on the current candidate's score.
+        """
+        return {
+            "n_transitions": self.n_transitions,
+            "n_considered_transitions": self.n_considered_transitions,
+            "p_accept": self.p_accept,
+        }
+
     @property
     def _normalized_energy_state(self) -> float:
         """Calculate normalized energy difference between new and current scores.

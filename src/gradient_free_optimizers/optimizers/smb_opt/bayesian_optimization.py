@@ -203,3 +203,13 @@ class BayesianOptimizer(SMBO):
         for pos, score in zip(positions, scores):
             self._pos_new = pos
             self._evaluate(score)
+
+    def _collect_state(self) -> dict:
+        """Expose acquisition-related state for internal-parameter tracking.
+
+        Reports the exploration-exploitation parameter ``xi`` and the best
+        acquisition value from the most recent surrogate-driven iteration.
+        ``best_acquisition`` is None until the first model-based iteration has
+        scored candidate positions through the acquisition function.
+        """
+        return {"xi": self.xi, "best_acquisition": self._last_acq_max}

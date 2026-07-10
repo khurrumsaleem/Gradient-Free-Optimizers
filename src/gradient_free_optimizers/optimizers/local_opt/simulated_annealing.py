@@ -135,6 +135,20 @@ class SimulatedAnnealingOptimizer(StochasticHillClimbingOptimizer):
                 "annealing_rate must be in (0, 1] when cooling='adaptive'."
             )
 
+    def _collect_state(self) -> dict:
+        """Expose the evolving annealing state for internal-parameter tracking.
+
+        Returns the current temperature and the cooling-step counter, the two
+        quantities that govern how the current candidate was generated and
+        will be accepted. The realized acceptance probability is intentionally
+        omitted: it depends on the score of the candidate, which is not yet
+        known when this hook runs.
+        """
+        return {
+            "temperature": self.temp,
+            "annealing_step": self._annealing_step,
+        }
+
     def _p_accept_default(self) -> float:
         """Calculate the configured acceptance probability.
 

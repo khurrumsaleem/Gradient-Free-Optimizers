@@ -132,6 +132,20 @@ class SpiralOptimization(BasePopulationOptimizer):
         self._spiral_decay_before_candidate = None
         self._spiral_decay_before_constraint_retries = None
 
+    def _collect_state(self) -> dict:
+        """Expose the contracting spiral-radius multiplier for tracking.
+
+        The decay factor is the radius multiplier applied in the spiral
+        equation. It starts at ``spiral_radius`` and is contracted by
+        ``decay_rate`` each iteration, so it characterizes the current
+        exploration-to-exploitation balance: large early on (wide spiral,
+        exploration) and shrinking over time (tight spiral, exploitation).
+        It is a cumulative scalar updated in prior steps and does not depend
+        on the current candidate's score, so it is safe to read before the
+        objective is evaluated.
+        """
+        return {"decay_factor": float(self._decay_factor)}
+
     def _on_init_pos(self, position) -> None:
         """Initialize current particle with the given position.
 

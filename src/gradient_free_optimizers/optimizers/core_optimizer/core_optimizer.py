@@ -235,6 +235,10 @@ class CoreOptimizer(ABC):
         self.search_state = "init"
         self.best_since_iter = 0
 
+        # Optional internal-parameter tracking (set by search(track_internals=True)).
+        # Stays None for non-tracking runs so the per-iteration hook is a no-op.
+        self._param_tracker = None
+
         # Auto-initialize dimension masks
         self._setup_dimension_masks()
 
@@ -871,6 +875,91 @@ class CoreOptimizer(ABC):
         if self.__score_best == -math.inf or score > self.__score_best:
             self._pos_best = position.copy()
             self._score_best = score
+
+    def _collect_shared_state(self) -> dict:
+        """Return optimizer-independent state merged into every tracked record.
+
+        These parameters exist on every optimizer, so they are collected
+        centrally here instead of being repeated in each ``_collect_state``
+        override. The tracking hook merges this dict first and then lets the
+        algorithm-specific ``_collect_state`` add its own keys on top. This
+        method is not meant to be overridden; add algorithm-specific state
+        through ``_collect_state`` instead.
+
+        ``iters_since_best`` is the number of completed evaluations since the
+        incumbent last improved (``nth_trial - best_since_iter``), a universal
+        stagnation indicator. In the iteration phase it is zero right after an
+        improvement and grows by one for every evaluation that fails to beat the
+        best. During the initialization phase it carries a one-step offset
+        because initialization updates the best before incrementing
+        ``nth_trial`` while iteration does it after; treat init-phase values as
+        approximate. It is always a non-negative integer because
+        ``best_since_iter`` is a past value of the monotonically increasing
+        ``nth_trial``.
+
+        ``move_distance`` is the Euclidean distance between the candidate about
+        to be evaluated and the current accepted position, with each dimension
+        normalized by its index span (``conv.max_positions``). It measures how
+        far the optimizer steps this iteration and lies in
+        ``[0, sqrt(n_dims)]``. It is ``None`` during the initialization phase
+        and before a current position exists, since scattered start points are
+        not steps. For population optimizers the current position is the most
+        recently accepted member position (round robin), so the distance
+        reflects swarm-level movement rather than a single member's step.
+
+        Both quantities reflect the state before the current candidate is
+        scored, so neither depends on the not-yet-known score of this candidate.
+
+        Returns
+        -------
+        dict
+            Mapping of shared scalar parameter name to value.
+        """
+        shared = {"iters_since_best": self.nth_trial - self.best_since_iter}
+
+        pos_new = self._pos_new
+        pos_current = self._pos_current
+        if pos_new is None or pos_current is None or self.search_state == "init":
+            shared["move_distance"] = None
+        else:
+            max_positions = self.conv.max_positions
+            total = 0.0
+            for idx in range(len(pos_new)):
+                span = float(max_positions[idx])
+                if span <= 0.0:
+                    continue
+                delta = (float(pos_new[idx]) - float(pos_current[idx])) / span
+                total += delta * delta
+            shared["move_distance"] = total**0.5
+
+        return shared
+
+    def _collect_state(self) -> dict:
+        """Return a flat dict of evolving internal parameters for tracking.
+
+        Override in concrete optimizers to expose algorithm-internal state
+        (temperature, velocity magnitude, acquisition value, ...) that a
+        researcher may want to inspect or plot. The base implementation
+        returns an empty dict, so optimizers without meaningful internal
+        state need no override.
+
+        This hook is invoked at most once per evaluation, and only when
+        ``search(..., track_internals=True)`` activated tracking. A
+        non-tracking run never calls it, so it adds nothing to the default
+        hot loop.
+
+        It fires *before* the objective is evaluated, so the returned values
+        reflect the state that generated the current candidate. Do not return
+        quantities that depend on the not-yet-known score of this candidate
+        (for example a realized acceptance probability); those would carry the
+        value from the previous step and mislead.
+
+        Returns
+        -------
+        dict
+            Mapping of scalar parameter name to value. Empty by default.
+        """
+        return {}
 
     @property
     def _pos_new(self):

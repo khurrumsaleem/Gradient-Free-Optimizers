@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import math
 import random
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
@@ -128,6 +129,45 @@ class GeneticAlgorithmOptimizer(BasePopulationOptimizer):
         # Iteration state for template method coordination
         self._iteration_setup_done = False
         self._ga_new_pos = None
+
+    def _collect_state(self) -> dict:
+        """Expose population diversity for internal-parameter tracking.
+
+        The spread of the current scores across the population is a direct
+        signal of how converged the genetic algorithm is: a shrinking
+        standard deviation means the individuals are clustering on a single
+        region, while a large value means the population still explores
+        diverse solutions. The number of queued offspring indicates how much
+        crossover material is currently buffered for upcoming iterations.
+
+        Both quantities come from state updated in previous steps, so they do
+        not depend on the score of the candidate about to be evaluated. The
+        standard deviation is computed with plain Python and is safe against
+        missing scores and an empty population. Scores are filtered to finite
+        values, which also discards the ``-inf`` sentinel that individuals
+        carry before their first evaluation, so the spread is ``0.0`` until
+        real scores exist instead of an ``inf - inf`` NaN.
+        """
+        if self.individuals is None or self.offspring_l is None:
+            return {}
+
+        scores = [
+            ind._score_current
+            for ind in self.individuals
+            if ind._score_current is not None and math.isfinite(ind._score_current)
+        ]
+
+        if scores:
+            mean = sum(scores) / len(scores)
+            variance = sum((s - mean) ** 2 for s in scores) / len(scores)
+            population_score_std = variance**0.5
+        else:
+            population_score_std = 0.0
+
+        return {
+            "population_score_std": population_score_std,
+            "n_offspring_queued": len(self.offspring_l),
+        }
 
     def _discrete_recombination(self, parent_pos_l, crossover_rates=None):
         """Combine parent positions using discrete recombination.

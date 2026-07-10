@@ -125,6 +125,17 @@ class PatternSearch(BaseOptimizer):
         self._next_position: ndarray | None = None
         self._next_position_computed: bool = False
 
+    def _collect_state(self) -> dict:
+        """Expose the current mesh size for internal-parameter tracking.
+
+        The pattern (mesh) size starts at ``pattern_size`` and shrinks by the
+        ``reduction`` factor whenever the best position is rediscovered in the
+        recent pattern, so its decay traces how the Hooke-Jeeves search
+        converges. Reporting it lets external tracking follow the contraction
+        of the local mesh over the run.
+        """
+        return {"pattern_size_tmp": float(self.pattern_size_tmp)}
+
     def _get_dim_sizes(self):
         """Get dimension sizes for pattern generation."""
         sizes = []

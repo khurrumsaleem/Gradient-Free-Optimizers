@@ -182,6 +182,27 @@ class ParallelTemperingOptimizer(BasePopulationOptimizer):
             except OverflowError:
                 return math.inf
 
+    def _collect_state(self) -> dict:
+        """Expose the replica temperature ladder for internal-parameter tracking.
+
+        Parallel tempering runs several SimulatedAnnealing replicas, each held
+        at its own temperature. The spread of those temperatures characterizes
+        the exploration/exploitation balance of the ensemble: the hottest replica
+        drives exploration while the coldest one refines solutions. Reporting the
+        minimum, maximum, and mean temperature lets a tracker watch how the ladder
+        evolves as swaps move temperatures between replicas.
+
+        Returns an empty dict when the replicas are not yet initialized.
+        """
+        if not self.systems:
+            return {}
+        temps = [float(s.temp) for s in self.systems]
+        return {
+            "min_temp": min(temps),
+            "max_temp": max(temps),
+            "mean_temp": sum(temps) / len(temps),
+        }
+
     def _on_init_pos(self, position):
         """Assign initialization position to current system.
 

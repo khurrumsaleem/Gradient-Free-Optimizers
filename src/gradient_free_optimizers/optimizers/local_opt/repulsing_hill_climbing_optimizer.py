@@ -91,6 +91,18 @@ class RepulsingHillClimbingOptimizer(HillClimbingOptimizer):
         self.repulsion_factor = repulsion_factor
         self.epsilon_mod = 1  # Multiplier for epsilon, increases when stuck
 
+    def _collect_state(self) -> dict:
+        """Expose the step-size repulsion state for internal-parameter tracking.
+
+        ``epsilon_mod`` is the multiplier applied to the base ``epsilon`` when
+        generating neighbors. It evolves between 1 (just improved, normal step
+        size) and ``repulsion_factor`` (last step was worse, taking larger steps
+        to escape the current region), so it signals whether the search is stuck.
+        The value reflects the adjustment made during the previous evaluation,
+        which is independent of the candidate score not yet evaluated this step.
+        """
+        return {"epsilon_mod": float(self.epsilon_mod)}
+
     def _iterate_continuous_batch(self) -> ndarray:
         """Generate new continuous values with adaptive step size.
 

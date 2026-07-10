@@ -234,6 +234,17 @@ class HillClimbingOptimizer(BaseOptimizer):
             # Update global best if this is better
             self._update_best(best_pos, best_score)
 
+    def _collect_state(self) -> dict:
+        """Expose the constant step-size scalar for internal-parameter tracking.
+
+        Hill climbing has no per-iteration evolving state. Its behavior is
+        governed by epsilon, the fixed step size that scales the perturbation
+        noise (sigma = range * epsilon for continuous dimensions). Exposing it
+        lets internal-parameter tracking record the step size that drove the
+        search, even though it does not change across iterations.
+        """
+        return {"epsilon": float(self.epsilon)}
+
     def _iterate_batch(self, n):
         """Generate n positions via independent perturbations from current position."""
         return [self._generate_position() for _ in range(n)]

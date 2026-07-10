@@ -141,6 +141,16 @@ class GridSearchOptimizer(BaseOptimizer):
         self._dim_sizes = self.conv.dim_sizes
         self._search_space_size = self.conv.search_space_size
 
+    def _collect_state(self) -> dict:
+        """Expose the grid traversal pointer for internal-parameter tracking.
+
+        The grid counter is a monotonic pointer into the linearized search
+        space. It advances by one each time a position is generated, so it
+        records how far the deterministic grid sweep has progressed. Reading it
+        lets a tracker follow coverage of the grid over the course of a run.
+        """
+        return {"grid_counter": int(self._grid_counter)}
+
     def _get_diagonal_direction(self):
         """Generate a prime number to serve as direction in search space.
 
