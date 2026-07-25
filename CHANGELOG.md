@@ -9,9 +9,17 @@ For detailed release notes, see [GitHub Releases](https://github.com/SimonBlanke
 
 ## [Unreleased]
 
+### Added
+- Optional tracking of optimizer-internal parameters via `search(track_internals=True)`. The per-iteration state collected during the run is available afterwards as the `optimizer.internal_data` list of records and, when the GFO dashboard decorator is used, is streamed live through the evaluation `metrics` channel. Runs that leave tracking disabled keep their original behavior and cost, gated by a single identity check per evaluation
+- Each optimizer exposes its evolving internal state through a new `_collect_state()` template method, for example `temperature` for Simulated Annealing, `velocity_norm` for Particle Swarm, `decay_factor` for Spiral, `sigma` for CMA-ES and Evolution Strategy, and `best_acquisition` for the Bayesian, Forest, and TPE surrogate optimizers
+- Every tracked record additionally carries optimizer-independent shared parameters collected centrally through `_collect_shared_state()`: `iters_since_best` (evaluations since the last improvement, a stagnation indicator) and `move_distance` (the normalized step length from the current position to the candidate, `None` during initialization)
+- Bayesian Optimization and Forest Optimization now support configurable acquisition functions through `acquisition_function`: Expected Improvement (default), Probability of Improvement, and Thompson Sampling, including the short aliases `ei`, `pi`, and `thompson`
+- Simulated Annealing now exposes configurable `cooling` schedules (`exponential`, `linear`, `logarithmic`, `cauchy`, `quadratic`, and `adaptive`) and `acceptance` criteria (`metropolis`, `barker`, and `threshold`)
+
 ### Changed
 - Spiral Optimization now computes movement in normalized search-space coordinates via the explicit `spiral_radius` parameter instead of using search-space scale divided by a fixed constant
 - Spiral Optimization now exposes `rotation_degrees` to control the angular stride of each spiral step
+- Particle Swarm Optimization now samples the cognitive and social random coefficients independently for each search-space dimension instead of applying one scalar coefficient to the complete velocity vector
 
 ### Fixed
 - Particle Swarm Optimization now updates each particle's current position and personal best after every evaluated move instead of inheriting hill-climbing acceptance behavior
@@ -34,6 +42,8 @@ For detailed release notes, see [GitHub Releases](https://github.com/SimonBlanke
 - Added regression coverage for transactional PSO and Spiral Optimization constraint retries
 - Added regression coverage for Differential Evolution and Genetic Algorithm population replacement semantics
 - Added regression coverage for Evolution Strategy generation selection and Genetic Algorithm rank-weighted selection
+- Added coverage that all 23 public optimizers expose only finite scalar internal parameters under `track_internals=True`, that tracking does not change search results, and a regression guarding the Genetic Algorithm population-spread against the uninitialized `-inf` score sentinel
+- Added coverage for all SMBO acquisition functions across the search and ask/tell APIs, all Simulated Annealing cooling and acceptance strategies, and dimension-wise Particle Swarm Optimization random coefficients
 
 ## [1.13.0] - 2026-05-15
 
