@@ -4,7 +4,7 @@
 
 """In-memory collection of optimizer-internal parameters.
 
-The tracker is created by ``search(..., track_internals=True)`` and attached
+The tracker is created by ``search(..., _track_internals=True)`` and attached
 to the optimizer as ``self._param_tracker``. When tracking is not requested
 the attribute stays ``None`` and the per-iteration hook in
 ``Search._evaluate_position`` short-circuits on a single identity check, so a
@@ -20,7 +20,7 @@ class InternalParamTracker:
     Each record is a flat dict ``{"iteration": int, "phase": str, **state}``
     where *state* is whatever the optimizer's ``_collect_state()`` returns.
     Records are kept in memory only; build a DataFrame downstream with
-    ``pandas.DataFrame(opt.internal_data)`` or stream them to the dashboard.
+    ``pandas.DataFrame(opt._internal_data)`` or stream them to the dashboard.
 
     The records list is the single source of truth for the run. It is appended
     to in evaluation order, including the initialization phase (``phase ==

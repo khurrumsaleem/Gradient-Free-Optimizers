@@ -235,7 +235,7 @@ class CoreOptimizer(ABC):
         self.search_state = "init"
         self.best_since_iter = 0
 
-        # Optional internal-parameter tracking (set by search(track_internals=True)).
+        # Optional internal-parameter tracking (set by search(_track_internals=True)).
         # Stays None for non-tracking runs so the per-iteration hook is a no-op.
         self._param_tracker = None
 
@@ -951,7 +951,7 @@ class CoreOptimizer(ABC):
         state need no override.
 
         This hook is invoked at most once per evaluation, and only when
-        ``search(..., track_internals=True)`` activated tracking. A
+        ``search(..., _track_internals=True)`` activated tracking. A
         non-tracking run never calls it, so it adds nothing to the default
         hot loop.
 

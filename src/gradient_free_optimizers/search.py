@@ -142,7 +142,7 @@ class Search(DistributedSearch, TimesTracker, SearchStatistics):
         optimum: Literal["maximum", "minimum"] = "maximum",
         callbacks: list[Callable[[CallbackInfo], bool | None]] | None = None,
         catch: dict[type[Exception], int | float] | None = None,
-        track_internals: bool = False,
+        _track_internals: bool = False,
     ) -> None:
         """Run the optimization loop.
 
@@ -353,7 +353,7 @@ class Search(DistributedSearch, TimesTracker, SearchStatistics):
             memory_warm_start,
             verbosity,
             catch,
-            track_internals,
+            _track_internals,
         )
 
         nth_trial = 0
@@ -437,7 +437,7 @@ class Search(DistributedSearch, TimesTracker, SearchStatistics):
         memory_warm_start: pd.DataFrame | None,
         verbosity: list[str] | Literal[False],
         catch: dict[type[Exception], int | float] | None = None,
-        track_internals: bool = False,
+        _track_internals: bool = False,
     ) -> None:
         objective_function = self._init_distributed(objective_function, catch)
 
@@ -485,7 +485,7 @@ class Search(DistributedSearch, TimesTracker, SearchStatistics):
 
         # Optional internal-parameter tracking. None means the per-iteration
         # hook in _evaluate_position short-circuits and the run is unaffected.
-        self._param_tracker = InternalParamTracker() if track_internals else None
+        self._param_tracker = InternalParamTracker() if _track_internals else None
 
         if self.verbosity is False:
             self.verbosity = []
@@ -590,11 +590,11 @@ class Search(DistributedSearch, TimesTracker, SearchStatistics):
         ``velocity_norm`` for particle swarm optimization).
 
         Returns ``None`` when the last :meth:`search` call did not pass
-        ``track_internals=True``. This is deliberately distinct from an empty
+        ``_track_internals=True``. This is deliberately distinct from an empty
         list: ``None`` means tracking was off, ``[]`` would mean tracking was
         on but produced no records.
 
-        Convert to a DataFrame with ``pandas.DataFrame(opt.internal_data)``.
+        Convert to a DataFrame with ``pandas.DataFrame(opt._internal_data)``.
         """
         if self._param_tracker is None:
             return None
