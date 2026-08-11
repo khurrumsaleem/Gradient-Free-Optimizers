@@ -11,9 +11,23 @@ Usage:
 The backend automatically selects the fastest available implementation:
 - If SciPy is installed: uses SciPy (fast, numerically stable)
 - If not: uses pure Python implementations (slower but functional)
+
+Set ``GFO_MATH_BACKEND=pure`` to exercise the pure Python implementations even
+when SciPy is installed, mirroring ``GFO_ARRAY_BACKEND``.
+``GFO_MATH_BACKEND=scipy`` pins SciPy and turns a missing SciPy into an error
+instead of a silent downgrade.
 """
 
-# === Dependency Detection ===
+import os
+
+_BACKEND_ENV = "GFO_MATH_BACKEND"
+_VALID_BACKENDS = ("scipy", "pure")
+
+_requested = os.environ.get(_BACKEND_ENV)
+if _requested is not None and _requested not in _VALID_BACKENDS:
+    raise ValueError(
+        f"{_BACKEND_ENV} must be one of {_VALID_BACKENDS}, got {_requested!r}"
+    )
 
 try:
     import scipy
@@ -23,12 +37,20 @@ try:
     from scipy.linalg import cholesky as _test_cholesky
 
     del _test_cholesky
-    HAS_SCIPY = True
+    SCIPY_IMPORTABLE = True
 except (ImportError, AttributeError):
-    HAS_SCIPY = False
+    SCIPY_IMPORTABLE = False
 
+if _requested == "scipy" and not SCIPY_IMPORTABLE:
+    raise ImportError(
+        f"{_BACKEND_ENV}=scipy was requested but SciPy could not be imported."
+    )
 
-# === Backend Selection ===
+# SCIPY_IMPORTABLE states whether SciPy exists here, HAS_SCIPY whether the
+# active backend uses it. Tests comparing the pure implementations against
+# SciPy read the former so that pinning the pure backend does not skip them.
+HAS_SCIPY = SCIPY_IMPORTABLE and _requested != "pure"
+
 
 if HAS_SCIPY:
     from ._scipy import *
@@ -42,6 +64,7 @@ else:
 
 __all__ = [
     "HAS_SCIPY",
+    "SCIPY_IMPORTABLE",
     "_backend_name",
     # Statistical functions
     "norm_cdf",

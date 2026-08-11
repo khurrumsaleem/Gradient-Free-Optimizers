@@ -2,10 +2,12 @@
 
 import pytest
 
-from gradient_free_optimizers._array_backend import HAS_NUMPY
+from gradient_free_optimizers._array_backend import NUMPY_IMPORTABLE
 
-# Only import numpy backend if numpy is available
-if HAS_NUMPY:
+# Reference backend for the comparison tests. Keyed on whether NumPy is
+# installed, not on whether it is the active backend, so that pinning the pure
+# backend still compares against NumPy instead of skipping.
+if NUMPY_IMPORTABLE:
     from gradient_free_optimizers._array_backend import _numpy as np_backend
 else:
     np_backend = None

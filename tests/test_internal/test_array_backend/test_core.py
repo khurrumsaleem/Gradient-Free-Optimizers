@@ -9,20 +9,23 @@ import math
 
 import pytest
 
-from gradient_free_optimizers._array_backend import HAS_NUMPY
+from gradient_free_optimizers._array_backend import HAS_NUMPY, NUMPY_IMPORTABLE
 from gradient_free_optimizers._array_backend import _pure as pure_backend
 
 from .conftest import arrays_close, to_list
 
-# Conditionally import numpy backend
-if HAS_NUMPY:
+# NUMPY_IMPORTABLE rather than HAS_NUMPY: these tests compare the two
+# implementations directly and only need NumPy present as a reference, not
+# selected as the active backend. Reading HAS_NUMPY would skip the whole
+# module whenever GFO_ARRAY_BACKEND=pure pins the pure path, which is exactly
+# the configuration under test.
+if NUMPY_IMPORTABLE:
     from gradient_free_optimizers._array_backend import _numpy as np_backend
 else:
     np_backend = None
 
-# Skip all tests in this module if numpy is not available
 pytestmark = pytest.mark.skipif(
-    not HAS_NUMPY, reason="NumPy not available for comparison tests"
+    not NUMPY_IMPORTABLE, reason="NumPy not installed, no reference to compare against"
 )
 
 
@@ -646,11 +649,13 @@ class TestReshapeNegativeOne:
 class TestBackendSelection:
     """Test that backend selection works correctly."""
 
-    def test_has_numpy_flag(self):
-        assert HAS_NUMPY is True  # We know NumPy is installed in test env
+    def test_numpy_importable_in_test_env(self):
+        assert NUMPY_IMPORTABLE is True
 
-    def test_array_backend_uses_numpy(self):
+    def test_flag_and_active_backend_agree(self):
+        # Holds under both the default selection and GFO_ARRAY_BACKEND=pure,
+        # so the pinned run verifies the switch instead of skipping it.
         import gradient_free_optimizers._array_backend as array_backend
 
-        if HAS_NUMPY:
-            assert array_backend._backend_name == "numpy"
+        expected = "numpy" if HAS_NUMPY else "pure"
+        assert array_backend._backend_name == expected

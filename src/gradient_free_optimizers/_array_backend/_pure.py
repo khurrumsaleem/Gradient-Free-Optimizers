@@ -56,6 +56,20 @@ nan = float("nan")
 ArrayLike = Union["GFOArray", list, tuple, int, float]
 Shape = int | tuple[int, ...]
 
+
+def _all_int(values) -> bool:
+    """Report whether every element is a plain Python int.
+
+    Mirrors how NumPy infers an integer dtype for all-integer input. ``bool``
+    fails the check because ``type(True) is bool``, keeping booleans on their
+    own storage path.
+    """
+    for v in values:
+        if type(v) is not int:
+            return False
+    return True
+
+
 int32 = int
 int64 = int
 float32 = float
@@ -103,13 +117,24 @@ class GFOArray:
                         flat.extend(row._data)
                     else:
                         flat.extend(row)
-                try:
-                    self._data = _array_mod.array(_DOUBLE, flat)
-                except TypeError:
+                if _all_int(flat):
                     self._data = flat
+                else:
+                    try:
+                        self._data = _array_mod.array(_DOUBLE, flat)
+                    except TypeError:
+                        self._data = flat
                 self._shape = (nrows, ncols)
                 self._ndim = 2
             elif type(data[0]) is bool:
+                self._data = list(data)
+                self._shape = (len(data),)
+                self._ndim = 1
+            elif _all_int(data):
+                # All-integer input keeps integer storage, as NumPy does. The
+                # array('d') buffer would silently turn category counts and
+                # index bounds into floats, which then reach range() and
+                # random.randint() and fail on the pure backend only.
                 self._data = list(data)
                 self._shape = (len(data),)
                 self._ndim = 1
@@ -120,6 +145,10 @@ class GFOArray:
                     self._data = list(data)
                 self._shape = (len(data),)
                 self._ndim = 1
+        elif type(data) is int:
+            self._data = [data]
+            self._shape = (1,)
+            self._ndim = 1
         elif isinstance(data, int | float):
             self._data = _array_mod.array(_DOUBLE, [data])
             self._shape = (1,)
@@ -147,12 +176,13 @@ class GFOArray:
         elif dtype is object:
             self._data = list(self._data)
         elif dtype is int or dtype is int64 or dtype is int32:
-            if isinstance(self._data, _array_mod.array):
-                self._data = _array_mod.array(
-                    _DOUBLE, (float(int(x)) for x in self._data)
-                )
-            else:
-                self._data = [int(x) for x in self._data]
+            # List storage rather than the array('d') buffer. Keeping the
+            # double buffer truncated the values correctly but stored them as
+            # floats, so dtype went on reporting float64 and every consumer
+            # received floats where NumPy hands back real integers. Callers
+            # that feed these into range(), random.randint() or a list index
+            # then fail on the pure backend only.
+            self._data = [int(x) for x in self._data]
         elif dtype is float or dtype is float64 or dtype is float32:
             if not isinstance(self._data, _array_mod.array):
                 try:
@@ -697,7 +727,10 @@ class GFOArray:
     def mean(self, axis=None):
         if axis is None:
             n = len(self._data)
-            return _sum(self._data) / n if n else 0.0
+            # NumPy yields nan for the mean of an empty array. Returning 0.0
+            # presented a fabricated value as a real measurement and let an
+            # empty input pass silently through every caller downstream.
+            return _sum(self._data) / n if n else nan
         s = self.sum(axis=axis)
         n = self._shape[axis]
         if isinstance(s, GFOArray):
@@ -713,6 +746,10 @@ class GFOArray:
         m = self.mean(axis=axis)
         if axis is None:
             n = len(self._data)
+            # Matches NumPy, which yields nan rather than raising when the
+            # sample is too small for the requested degrees of freedom.
+            if n - ddof <= 0:
+                return nan
             variance = _sum((x - m) ** 2 for x in self._data) / (n - ddof)
             return _m_sqrt(variance)
         raise NotImplementedError("Axis-aware std not implemented")

@@ -6,7 +6,24 @@ fallback: numpy (fastest) -> pure Python (functional).
 
 Usage:
     from gradient_free_optimizers._array_backend import array, zeros, clip, rint
+
+Set ``GFO_ARRAY_BACKEND=pure`` to exercise the pure Python backend even when
+NumPy is installed. Without it the pure path can only be reached by
+uninstalling NumPy, which puts a large amount of code out of local reach.
+``GFO_ARRAY_BACKEND=numpy`` pins the NumPy backend and turns a missing NumPy
+into an error instead of a silent downgrade.
 """
+
+import os
+
+_BACKEND_ENV = "GFO_ARRAY_BACKEND"
+_VALID_BACKENDS = ("numpy", "pure")
+
+_requested = os.environ.get(_BACKEND_ENV)
+if _requested is not None and _requested not in _VALID_BACKENDS:
+    raise ValueError(
+        f"{_BACKEND_ENV} must be one of {_VALID_BACKENDS}, got {_requested!r}"
+    )
 
 try:
     import numpy
@@ -15,9 +32,23 @@ try:
     from numpy import array as _test_array
 
     del _test_array
-    HAS_NUMPY = True
+    NUMPY_IMPORTABLE = True
 except (ImportError, AttributeError):
-    HAS_NUMPY = False
+    NUMPY_IMPORTABLE = False
+
+if _requested == "numpy" and not NUMPY_IMPORTABLE:
+    raise ImportError(
+        f"{_BACKEND_ENV}=numpy was requested but NumPy could not be imported."
+    )
+
+# NUMPY_IMPORTABLE states whether NumPy exists in this environment, HAS_NUMPY
+# whether the active backend uses it. They differ only when the pure backend is
+# pinned. Consumers read HAS_NUMPY to decide whether a NumPy fast path may be
+# taken, so pinning has to switch those off as well; a forced run that still
+# executed NumPy code would prove nothing. Tests that need NumPy purely as a
+# reference to compare the pure backend against read NUMPY_IMPORTABLE, so
+# pinning narrows what runs rather than silently skipping the comparison.
+HAS_NUMPY = NUMPY_IMPORTABLE and _requested != "pure"
 
 if HAS_NUMPY:
     from ._numpy import *
@@ -34,6 +65,7 @@ else:
 
 __all__ = [
     "HAS_NUMPY",
+    "NUMPY_IMPORTABLE",
     "_backend_name",
     # Array creation
     "array",

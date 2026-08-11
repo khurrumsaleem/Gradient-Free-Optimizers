@@ -9,18 +9,21 @@ import math
 
 import pytest
 
-from gradient_free_optimizers._math_backend import HAS_SCIPY
+from gradient_free_optimizers._math_backend import HAS_SCIPY, SCIPY_IMPORTABLE
 from gradient_free_optimizers._math_backend import _pure as pure_math
 
-# Conditionally import scipy backend
-if HAS_SCIPY:
+# SCIPY_IMPORTABLE rather than HAS_SCIPY: these tests compare the two
+# implementations directly and only need SciPy present as a reference, not
+# selected as the active backend. Reading HAS_SCIPY would skip the whole
+# module whenever GFO_MATH_BACKEND=pure pins the pure path, which is exactly
+# the configuration under test.
+if SCIPY_IMPORTABLE:
     from gradient_free_optimizers._math_backend import _scipy as scipy_backend
 else:
     scipy_backend = None
 
-# Skip all tests in this module if scipy is not available
 pytestmark = pytest.mark.skipif(
-    not HAS_SCIPY, reason="SciPy not available for comparison tests"
+    not SCIPY_IMPORTABLE, reason="SciPy not installed, no reference to compare against"
 )
 
 
@@ -329,14 +332,16 @@ class TestCdistPurePath:
 class TestBackendSelection:
     """Test that backend selection works correctly."""
 
-    def test_has_scipy_flag(self):
-        assert HAS_SCIPY is True  # We know SciPy is installed in test env
+    def test_scipy_importable_in_test_env(self):
+        assert SCIPY_IMPORTABLE is True
 
-    def test_math_backend_uses_scipy(self):
+    def test_flag_and_active_backend_agree(self):
+        # Holds under both the default selection and GFO_MATH_BACKEND=pure,
+        # so the pinned run verifies the switch instead of skipping it.
         import gradient_free_optimizers._math_backend as math_backend
 
-        if HAS_SCIPY:
-            assert math_backend._backend_name == "scipy"
+        expected = "scipy" if HAS_SCIPY else "pure"
+        assert math_backend._backend_name == expected
 
 
 # =============================================================================
