@@ -55,7 +55,7 @@
 
     <p align="center">
     <a href="https://github.com/SimonBlanke/Gradient-Free-Optimizers/actions"><img src="https://img.shields.io/github/actions/workflow/status/SimonBlanke/Gradient-Free-Optimizers/ci.yml?style=for-the-badge&logo=githubactions&logoColor=white&label=tests" alt="Tests"></a>
-    <a href="https://app.codecov.io/gh/SimonBlanke/Gradient-Free-Optimizers"><img src="https://img.shields.io/codecov/c/github/SimonBlanke/Gradient-Free-Optimizers?style=for-the-badge&logo=codecov&logoColor=white" alt="Coverage"></a>
+    <a href="https://app.codecov.io/gh/SimonBlanke/Gradient-Free-Optimizers/tree/main"><img src="https://img.shields.io/codecov/c/github/SimonBlanke/Gradient-Free-Optimizers/main?style=for-the-badge&logo=codecov&logoColor=white" alt="Coverage"></a>
     </p>
 
     <hr style="border-radius: 0; border-top: 3px solid var(--pst-color-border); margin: 2.5rem 0 0.5rem 0;">
