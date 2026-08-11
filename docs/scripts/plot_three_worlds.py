@@ -6,6 +6,8 @@ search_space dictionary.
 Output: mixed_search_spaces_diagram.png (300 DPI)
 """
 
+from pathlib import Path
+
 import matplotlib
 
 matplotlib.use("Agg")
@@ -564,10 +566,7 @@ ax.text(
 # ---------------------------------------------------------------------------
 # Save
 # ---------------------------------------------------------------------------
-out_path = (
-    "/home/me/github-workspace/002-gfo-stack/"
-    "Gradient-Free-Optimizers/mixed_search_spaces_diagram.png"
-)
+out_path = Path(__file__).resolve().parents[2] / "mixed_search_spaces_diagram.png"
 fig.savefig(out_path, dpi=500, facecolor=BG_COLOR, bbox_inches="tight", pad_inches=0.05)
 plt.close(fig)
 print(f"Saved: {out_path}")
