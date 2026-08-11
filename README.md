@@ -49,7 +49,7 @@ Lightweight optimization with local, global, population-based and sequential tec
 ---
 
 <a href="https://github.com/SimonBlanke/Gradient-Free-Optimizers">
-  <img src="./docs/gifs/3d_optimizer_animation.gif" width="240" align="right" alt="Bayesian Optimization on Ackley Function">
+  <img src="./docs/source/_static/gifs/3d_optimizer_animation.gif" width="240" align="right" alt="Bayesian Optimization on Ackley Function">
 </a>
 
 **Gradient-Free-Optimizers** is a Python library for gradient-free optimization of black-box functions. It provides a unified interface to 23 optimization algorithms, from simple hill climbing to Bayesian optimization, all operating on mixed search spaces that combine continuous ranges, discrete grids, categorical choices, and SciPy distribution-backed dimensions.
