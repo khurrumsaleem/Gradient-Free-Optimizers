@@ -10,11 +10,9 @@ For detailed release notes, see [GitHub Releases](https://github.com/SimonBlanke
 ## [Unreleased]
 
 ### Added
-- Optional tracking of optimizer-internal parameters via `search(track_internals=True)`. The per-iteration state collected during the run is available afterwards as the `optimizer.internal_data` list of records and, when the GFO dashboard decorator is used, is streamed live through the evaluation `metrics` channel. Runs that leave tracking disabled keep their original behavior and cost, gated by a single identity check per evaluation
-- Each optimizer exposes its evolving internal state through a new `_collect_state()` template method, for example `temperature` for Simulated Annealing, `velocity_norm` for Particle Swarm, `decay_factor` for Spiral, `sigma` for CMA-ES and Evolution Strategy, and `best_acquisition` for the Bayesian, Forest, and TPE surrogate optimizers
-- Every tracked record additionally carries optimizer-independent shared parameters collected centrally through `_collect_shared_state()`: `iters_since_best` (evaluations since the last improvement, a stagnation indicator) and `move_distance` (the normalized step length from the current position to the candidate, `None` during initialization)
 - Bayesian Optimization and Forest Optimization now support configurable acquisition functions through `acquisition_function`: Expected Improvement (default), Probability of Improvement, and Thompson Sampling, including the short aliases `ei`, `pi`, and `thompson`
 - Simulated Annealing now exposes configurable `cooling` schedules (`exponential`, `linear`, `logarithmic`, `cauchy`, `quadratic`, and `adaptive`) and `acceptance` criteria (`metropolis`, `barker`, and `threshold`)
+- `GFO_ARRAY_BACKEND` and `GFO_MATH_BACKEND` environment variables to pin the array and math backends to `numpy`/`scipy` or `pure`, making the pure Python fallback testable without uninstalling NumPy or SciPy and turning a missing pinned dependency into an explicit error instead of a silent downgrade
 
 ### Changed
 - Spiral Optimization now computes movement in normalized search-space coordinates via the explicit `spiral_radius` parameter instead of using search-space scale divided by a fixed constant
@@ -34,6 +32,9 @@ For detailed release notes, see [GitHub Releases](https://github.com/SimonBlanke
 - Genetic Algorithm now preserves an individual's current state when a mutation or crossover trial scores worse, maintaining selection pressure for parent ranking
 - Evolution Strategy now uses `offspring` as the evaluated generation size and applies `replace_parents` as documented for `(mu, lambda)` versus `(mu + lambda)` selection
 - Genetic Algorithm now selects active individuals with rank-weighted pressure toward fitter population members instead of choosing uniformly after sorting
+- Tree-Structured Parzen Estimators now computes the acquisition ratio in log space, so candidates far from all observed samples no longer collapse to a `0/0` division that ranked numerically dead regions above genuinely promising ones
+- The pure Python array backend now keeps all-integer input in integer storage and returns real integers from `astype(int)`, matching NumPy dtype semantics for consumers such as `range()` and `random.randint()`
+- The pure Python array backend now returns `nan` for the mean and standard deviation of empty or undersized samples, matching NumPy instead of fabricating `0.0`
 
 ### Tests
 - Added regression tests for PSO particle state updates, PSO personal-best ordering, and one-dimensional spiral rotation
@@ -42,7 +43,7 @@ For detailed release notes, see [GitHub Releases](https://github.com/SimonBlanke
 - Added regression coverage for transactional PSO and Spiral Optimization constraint retries
 - Added regression coverage for Differential Evolution and Genetic Algorithm population replacement semantics
 - Added regression coverage for Evolution Strategy generation selection and Genetic Algorithm rank-weighted selection
-- Added coverage that all 23 public optimizers expose only finite scalar internal parameters under `track_internals=True`, that tracking does not change search results, and a regression guarding the Genetic Algorithm population-spread against the uninitialized `-inf` score sentinel
+- Added a regression test guarding the Genetic Algorithm population-spread computation against the uninitialized `-inf` score sentinel
 - Added coverage for all SMBO acquisition functions across the search and ask/tell APIs, all Simulated Annealing cooling and acceptance strategies, and dimension-wise Particle Swarm Optimization random coefficients
 
 ## [1.13.0] - 2026-05-15
