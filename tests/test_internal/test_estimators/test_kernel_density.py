@@ -35,11 +35,15 @@ class TestFit:
         kde.fit([[0.0], [1.0], [2.0]])
         assert kde.bandwidth == 0.5
 
-    def test_constant_data_raises_due_to_zero_bandwidth(self):
-        """Silverman's rule yields bandwidth=0 for constant data."""
+    def test_constant_data_falls_back_to_unit_bandwidth(self):
+        """Constant data must not break the fit.
+
+        Silverman's rule yields sigma=0 for constant data; fit() falls back
+        to bandwidth=1.0 instead of failing on the degenerate sample.
+        """
         kde = KernelDensityEstimator()
-        with pytest.raises(ValueError, match="bandwidth must be positive"):
-            kde.fit([[1.0], [1.0], [1.0]])
+        kde.fit([[1.0], [1.0], [1.0]])
+        assert kde.bandwidth == 1.0
 
     def test_negative_bandwidth_raises(self):
         kde = KernelDensityEstimator(bandwidth=-0.5)
