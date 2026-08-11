@@ -11,16 +11,28 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from gradient_free_optimizers._array_backend import (
     array,
+    clip,
     exp,
     linalg,
+    maximum,
     ndarray,
-    zeros_like,
 )
 
 from .smbo import SMBO
 
 if TYPE_CHECKING:
     import pandas as pd
+
+# Largest magnitude the log density ratio is evaluated at. Beyond this the
+# acquisition value has already reached its limit (1/gamma_tpe or 0) to within
+# machine precision, so clamping changes no result but keeps exp() finite.
+_MAX_LOG_RATIO = 700.0
+
+# Finite stand-in for log(0), used when an estimator reports exactly zero
+# density. It sits far below any log density a Gaussian KDE can produce, so no
+# genuine value is affected, while the difference of two stand-ins is exactly
+# zero and the difference against any real value stays free of overflow.
+_ZERO_DENSITY_LOG = -1e300
 
 # Use sklearn's KDE if available, otherwise native implementation
 try:
@@ -172,28 +184,27 @@ class TreeStructuredParzenEstimators(SMBO):
         """
         self.pos_comb = self._sampling(self.all_pos_comb)
 
-        logprob_best = self.kd_best.score_samples(self.pos_comb)
-        logprob_worst = self.kd_worst.score_samples(self.pos_comb)
+        logprob_best = array(self.kd_best.score_samples(self.pos_comb))
+        logprob_worst = array(self.kd_worst.score_samples(self.pos_comb))
 
-        prob_best = exp(array(logprob_best))
-        prob_worst = exp(array(logprob_worst))
+        # The ratio is formed as exp(log g - log l) rather than by dividing two
+        # separately exponentiated densities. Both KDE log densities drop far
+        # below the exp() underflow limit once candidates sit away from the
+        # observed samples. Exponentiating them individually collapses such
+        # candidates to 0/0, which the previous guard mapped to the largest
+        # possible acquisition value and thereby made numerically dead regions
+        # outrank genuinely promising ones. Their difference stays in range.
+        #
+        # Substituting a finite stand-in for an exactly zero density keeps the
+        # subtraction defined. A candidate out of reach of both estimators then
+        # scores as l(x) == g(x), carrying no preference, instead of becoming
+        # NaN and poisoning the argmax. Candidates whose densities merely
+        # underflow keep their exact difference and stay rankable.
+        log_worst = maximum(logprob_worst, _ZERO_DENSITY_LOG)
+        log_best = maximum(logprob_best, _ZERO_DENSITY_LOG)
+        log_ratio = clip(log_worst - log_best, -_MAX_LOG_RATIO, _MAX_LOG_RATIO)
+        worst_over_best = exp(log_ratio)
 
-        # Safe division: only divide where prob_worst != 0
-        worst_over_best = zeros_like(prob_worst)
-        nonzero_worst = prob_worst != 0
-        nonzero_best = prob_best != 0
-
-        # Where both are nonzero, compute ratio
-        both_nonzero = nonzero_worst & nonzero_best
-        worst_over_best[both_nonzero] = (
-            prob_worst[both_nonzero] / prob_best[both_nonzero]
-        )
-
-        # Where worst != 0 but best == 0, set to inf
-        worst_only = nonzero_worst & ~nonzero_best
-        worst_over_best[worst_only] = float("inf")
-
-        # Compute expected improvement inverse and invert
         exp_imp_inv = self.gamma_tpe + worst_over_best * (1 - self.gamma_tpe)
         exp_imp = 1 / exp_imp_inv
 
